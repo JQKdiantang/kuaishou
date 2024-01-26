@@ -4,7 +4,7 @@ import sqlite3
 import requests
 import threadpool
 
-from 快手下载 import main2
+from GUI.Utils import Util
 
 
 def create_database():
@@ -23,6 +23,7 @@ def create_database():
                 CREATE TABLE author (
                 user_id TEXT,
                 author TEXT,
+                time TEXT,
                 id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT); 
                 ''')
 
@@ -145,7 +146,18 @@ def GetAllAuthorInfo():
     with conn:
         datas = conn.execute(sql, )
         for info in datas:
-            da = (info[0], main2.rep_char(info[1]), info[2])
+            da = (info[0], Util.rep_char(info[1]), info[2])
+            data.append(da)
+    conn.close()
+    return data
+
+def GetAllAuthorInfoNo():
+    conn = sqlite3.connect('Download.db')
+    sql = 'SELECT ROW_NUMBER() OVER (ORDER BY user_id) AS 序号 ,author  ,user_id FROM author'
+    with conn:
+        datas = conn.execute(sql, )
+        for info in datas:
+            da = (info[0], Util.rep_char(info[1]),info[2])
             data.append(da)
     conn.close()
     return data

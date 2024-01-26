@@ -182,17 +182,17 @@ def save(id, url, page, ck, ua):
     if time1 is None:
         works_time = time1 = "0"
 
-    # data = req_data_num(url, id, ck, ua)
-    #
-    # # print(data)
-    # # 作品数量
-    # photo_public = data['data']['visionProfile']['userProfile']['ownerCount']['photo_public']
-    # # 作者名称
-    # author = data['data']['visionProfile']['userProfile']['profile']['user_name']
-    # author = rep_char(author)
-    # works_num = mySqlite.GetUserWorksNum(id);
-    # print(
-    #     f'作者：{author} {id}  作品数：{photo_public}  存储作品数：{works_num} 存储时间： {works_time} 全部视频地址加载中...')
+    data = req_data_num(url, id, ck, ua)
+
+    # print(data)
+    # 作品数量
+    photo_public = data['data']['visionProfile']['userProfile']['ownerCount']['photo_public']
+    # 作者名称
+    author = data['data']['visionProfile']['userProfile']['profile']['user_name']
+    author = rep_char(author)
+    works_num = mySqlite.GetUserWorksNum(id);
+    print(
+        f'作者：{author} {id}  作品数：{photo_public}  存储作品数：{works_num} 存储时间： {works_time} 全部视频地址加载中...')
     num = 0
     # 循环下载视频，直到 page == 'no_more'
     while page != 'no_more':
@@ -208,11 +208,22 @@ def save(id, url, page, ck, ua):
             num = num + 1
             # 视频名称
             video_name = rep_char(item['photo']['caption'])
+            # 视频时长
+            duration = int(item['photo']['duration']/1000)
+            # 视频ID
+            voide_id = item['photo']['videoResource']['h264']['videoId']
+            # 视频高度
+            voide_hieght = item['photo']['videoResource']['h264']['adaptationSet'][0]['representation'][0]['height']
+            # 视频宽度
+            voide_width = item['photo']['videoResource']['h264']['adaptationSet'][0]['representation'][0]['width']
+
+            print(voide_id, voide_hieght, voide_width)
 
             # 视频地址 H265
             video_url = item['photo']['photoH265Url']
             if video_url is None or video_url == "":  # 如果没有H265 获取H264
                 video_url = item['photo']['photoUrl']
+
             # 视频发布时间
             video_time = item['photo']['timestamp']
             # 作者名称
@@ -237,10 +248,10 @@ def save(id, url, page, ck, ua):
             if mySqlite.selectIsDownloadDate(datas) != 1:
                 datas = [(id, video_url, video_time, video_name, False)]
                 mySqlite.insertDownloadDate(datas)
-            # print("# " + str(photo_public) + "-" + str(num), author, video_name, video_time,
-            #       video_url)
-            print(str(num), author, video_name, video_time,
+            print("# " + str(photo_public) + "-" + str(num), author, video_name, video_time,
                   video_url)
+            # print(str(num), author, video_name, video_time,
+            #       video_url)
         # 判断是否有新视频
         if not is_new:
             if works_time != '0':
@@ -248,9 +259,9 @@ def save(id, url, page, ck, ua):
                 print("更新最新作品时间", id, works_time)
             break
 
-    # print(
-    #     f'作者：{author} {id}  作品数：{photo_public} 全部视频地址加载完成！！！')
-        print(f'作者： {id}   全部视频地址加载完成！！！')
+    print(
+        f'作者：{author} {id}  作品数：{photo_public} 全部视频地址加载完成！！！')
+    # print(f'作者： {id}   全部视频地址加载完成！！！')
     file = open('ID.txt')
     lines = file.readlines()
     lines.remove(id+'\n')
@@ -426,7 +437,10 @@ def SetInfo():
 
 path = 'D:/video'
 
+
+
 if __name__ == '__main__':
+
     link, pcursor, ck, ua, selfid = SetInfo()
     # get_all_like(link, pcursor, ck, ua, selfid)  # 获取全部喜欢ID
     # get_all_ids(link, pcursor, ck, ua, selfid)  # 获取用户关注

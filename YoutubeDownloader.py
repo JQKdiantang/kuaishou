@@ -32,7 +32,7 @@ def SettingView(__file_path):
                "it's recommended to leave this option enabled to ensure that the app is compatible with the latest version of YouTube")
 
     replaceStr(__file_path, "暗黑模式", "Dark mode")
-    replaceStr(__file_path, "在UI中使用较深的颜色", "Use darker colors in the UI")
+    replaceStr(__file_path, "在UI中使用较深的颜色", "Use darker colors in the VIews")
 
     replaceStr(__file_path, "保存身份验证", "Persist authentication")
     replaceStr(__file_path, "将身份验证cookie保存到文件中，以便它们可以在会话之间持久化",

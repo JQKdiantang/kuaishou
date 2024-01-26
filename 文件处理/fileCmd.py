@@ -522,6 +522,7 @@ if __name__ == '__main__':
     # output_folder = r'D:\Download\软件\download1'
 
     folder_path = r'D:\直播复盘录制工具_N\抖音'
+    # folder_path = r'E:\新建文件夹'
     # folder_path = r'E:\video'
 
     # 批量处理录制文件信息
