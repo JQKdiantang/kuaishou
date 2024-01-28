@@ -1,0 +1,10 @@
+<RCC>
+  <qresource prefix="png">
+    <file>head_u.png</file>
+    <file>female.png</file>
+    <file>male.png</file>
+  </qresource>
+  <qresource prefix="font">
+    <file>阿里妈妈方圆体100.ttf</file>
+  </qresource>
+</RCC>

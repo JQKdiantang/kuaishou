@@ -109,9 +109,9 @@ def xxxxxxx():
         datas = conn.execute(sql, )
         for url in datas:
             da = (url[0], '', url[2], True, '', url[5])
-            data.append(da)
+            DownloadData.append(da)
     conn.close()
-    return data
+    return DownloadData
 
 
 # 获取全部作者信息和最后更新时间
@@ -122,9 +122,9 @@ def GetAllAuthorAndRecordIndo():
         datas = conn.execute(sql, )
         for info in datas:
             da = (info[0], info[2], info[1], info[3])
-            data.append(da)
+            DownloadData.append(da)
     conn.close()
-    return data
+    return DownloadData
 
 
 # 更新全部作者信息和最后更新时间 高效率
@@ -146,9 +146,9 @@ def GetAllAuthorInfo():
         datas = conn.execute(sql, )
         for info in datas:
             da = (info[0], main2.rep_char(info[1]), info[2])
-            data.append(da)
+            DownloadData.append(da)
     conn.close()
-    return data
+    return DownloadData
 
 
 def UpdateAllAuthorInfo(datas):
@@ -299,7 +299,7 @@ def DeleteInvalidDataForDownload(user_id):
 
 
 # 下载信息
-data = []
+DownloadData = []
 num = 0
 def func(user_id, video_url, video_time, isDownload, video_name, id, author):
     # time.sleep(0.5)
@@ -320,7 +320,7 @@ def func(user_id, video_url, video_time, isDownload, video_name, id, author):
         print(f'{str(num) + "# " + filepath}>>> 已存在')
     # datas = (user_id, video_url, video_time,True,video_name,id)
     datas = (user_id, '', video_time, True, '', id)  # 下载完成后删url地址和作品名称 减小数据库大小
-    data.append(datas)
+    DownloadData.append(datas)
 
 
 def GetMaxTime():
@@ -375,7 +375,7 @@ if __name__ == '__main__':
         pool.wait()
         print("下载完成")
         print("数据库更新中~~~")
-        UpdateDates2(data)
+        UpdateDates2(DownloadData)
         print("数据库压缩中~~~")
         CompressDataBase()
         print("数据库更新完成")

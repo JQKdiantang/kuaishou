@@ -2,9 +2,12 @@
 import ctypes
 import datetime
 import os
+import re
 import string
 import sys
 
+import unicodedata
+from AnyQt.QtGui import QFontDatabase
 from fake_useragent import FakeUserAgent
 
 
@@ -75,3 +78,15 @@ def timestamp_to_datetime(timestamp):
     timestamp = timestamp / 1000.0  # 将时间戳从毫秒转换为秒
     date_string = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
     return date_string
+
+
+def GetCustomFonts(self):
+    font_family = "Ryanの阿里媽媽方圓體100"  # 替换为你的字体家族名称
+    if QFontDatabase.addApplicationFont(":/font/阿里妈妈方圆体100.ttf"):  # 替换为你的字体文件路径
+        font_family = font_family + " " + QFontDatabase.applicationFontFamilies(0)[0]  # 获取字体名称，可能需要手动添加字体家族名称
+    return font_family
+
+
+def contains_chinese(input_str):
+    return bool(re.search(r'[\u4e00-\u9fa5]', input_str))
+
