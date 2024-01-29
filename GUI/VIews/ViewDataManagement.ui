@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>940</width>
-    <height>566</height>
+    <height>540</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -21,7 +21,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>70</y>
+      <y>50</y>
       <width>400</width>
       <height>471</height>
      </rect>
@@ -37,6 +37,11 @@
     </attribute>
     <column>
      <property name="text">
+      <string>作者ID</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
       <string>作者昵称</string>
      </property>
     </column>
@@ -49,8 +54,8 @@
    <widget class="QLabel" name="label_2">
     <property name="geometry">
      <rect>
-      <x>110</x>
-      <y>30</y>
+      <x>120</x>
+      <y>20</y>
       <width>131</width>
       <height>25</height>
      </rect>
@@ -74,7 +79,7 @@
     <property name="geometry">
      <rect>
       <x>650</x>
-      <y>40</y>
+      <y>20</y>
       <width>131</width>
       <height>25</height>
      </rect>
@@ -94,24 +99,11 @@
      <set>Qt::AlignCenter</set>
     </property>
    </widget>
-   <widget class="QPushButton" name="btnClose">
-    <property name="geometry">
-     <rect>
-      <x>820</x>
-      <y>10</y>
-      <width>101</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>返回</string>
-    </property>
-   </widget>
    <widget class="QTableWidget" name="tw_author_2">
     <property name="geometry">
      <rect>
       <x>520</x>
-      <y>70</y>
+      <y>50</y>
       <width>400</width>
       <height>471</height>
      </rect>
@@ -127,6 +119,11 @@
     </attribute>
     <column>
      <property name="text">
+      <string>作者ID</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
       <string>作者昵称</string>
      </property>
     </column>
@@ -136,11 +133,11 @@
      </property>
     </column>
    </widget>
-   <widget class="QPushButton" name="btnClose_2">
+   <widget class="QPushButton" name="btnAdd">
     <property name="geometry">
      <rect>
       <x>430</x>
-      <y>230</y>
+      <y>210</y>
       <width>80</width>
       <height>30</height>
      </rect>
@@ -149,11 +146,11 @@
      <string>&lt;&lt;</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="btnClose_3">
+   <widget class="QPushButton" name="btnRemove">
     <property name="geometry">
      <rect>
       <x>430</x>
-      <y>290</y>
+      <y>270</y>
       <width>80</width>
       <height>30</height>
      </rect>

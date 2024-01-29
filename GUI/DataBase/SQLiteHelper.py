@@ -6,8 +6,9 @@ import threadpool
 
 from GUI.Utils import Util
 
-
 DatabaseName = 'Download.db'
+
+
 def create_database():
     if not os.path.exists(DatabaseName):
         conn = sqlite3.connect(DatabaseName)
@@ -106,7 +107,7 @@ def UpdateDates2(datas):
 
 
 def xxxxxxx():
-    data =[]
+    data = []
     conn = sqlite3.connect(DatabaseName)
     sql = 'select * from Download '
     with conn:
@@ -119,7 +120,7 @@ def xxxxxxx():
 
 
 # 获取全部作者信息和最后更新时间
-def GetAllAuthorAndRecordIndo():
+def GetAllAuthorAndRecordInfo():
     data = []
     conn = sqlite3.connect(DatabaseName)
     sql = 'select * from author; '
@@ -133,7 +134,7 @@ def GetAllAuthorAndRecordIndo():
 
 
 # 更新全部作者信息和最后更新时间 高效率
-def UpdateAllAuthorAndRecordIndo(datas):
+def UpdateAllAuthorAndRecordInfo(datas):
     conn = sqlite3.connect(DatabaseName)
     sql = 'REPLACE INTO author (id,user_id,author,time) values(?,?,?,?) '
     cursor = conn.cursor()
@@ -145,9 +146,9 @@ def UpdateAllAuthorAndRecordIndo(datas):
 
 
 def GetAllAuthorInfo():
-    data =[]
+    data = []
     conn = sqlite3.connect(DatabaseName)
-    sql = 'select * from author '
+    sql = 'select * from author'
     with conn:
         datas = conn.execute(sql, )
         for info in datas:
@@ -156,11 +157,22 @@ def GetAllAuthorInfo():
     conn.close()
     return data
 
+def GetAllAuthorInfoACL(acl):
+    data = []
+    conn = sqlite3.connect(DatabaseName)
+    sql = 'select * from author where ACL = ? ORDER BY user_id'
+    with conn:
+        datas = conn.execute(sql, (acl,))
+        for info in datas:
+            da = (info[0], Util.rep_char(info[1]), info[2])
+            data.append(da)
+    conn.close()
+    return data
 
 def GetAllAuthorInfoNo():
     data = []
     conn = sqlite3.connect(DatabaseName)
-    sql = 'SELECT ROW_NUMBER() OVER (ORDER BY user_id) AS 序号 ,author  ,user_id FROM author'
+    sql = 'SELECT ROW_NUMBER() OVER (ORDER BY user_id) AS 序号 ,author  ,user_id FROM author where ACL != 0'
     with conn:
         datas = conn.execute(sql, )
         for info in datas:
@@ -177,6 +189,14 @@ def UpdateAllAuthorInfo(datas):
     cursor.executemany(sql, datas)
     cursor.close()
     conn.commit()
+    conn.close()
+
+
+def UpdateAuthorACl(user_id, acl):
+    conn = sqlite3.connect(DatabaseName)
+    sql = 'Update  author set  ACL = ? where user_id = ? '
+    with conn:
+        conn.execute(sql, (acl, user_id))
     conn.close()
 
 

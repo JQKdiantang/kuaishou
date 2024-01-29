@@ -6,7 +6,7 @@ from PyQt5.QtGui import QColor, QFontDatabase, QFont
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTableWidgetItem, QCheckBox
 
 from GUI.DataBase import SQLiteHelper
-from GUI.VIewModels.AddAuthorViewModel import  AddAuthorVIewModel
+from GUI.VIewModels.AddAuthorViewModel import AddAuthorVIewModel
 from GUI.VIewModels.SettingViewModel import SettingVIewModel
 from GUI.VIewModels.DataManagementViewModel import DataManagementViewModel
 from GUI.VIews.ViewMainWindow import Ui_MainWindow
@@ -31,15 +31,14 @@ class MainWindowViewModel(QMainWindow, Ui_MainWindow):
         self.ui_data = None
         self.listInfo = None
 
-        self.btnStart.clicked.connect(self.Start)
+        self.btnStart.clicked.connect(self.Gather)
         self.btnAdd.clicked.connect(self.AddAuthor)
         self.btnSet.clicked.connect(self.Setting)
-        self.btnData.clicked.connect(self.Data)
+        self.btnData.clicked.connect(self.DataManagement)
         self.btnClose.clicked.connect(self.closeEvent)
         self.Init()
 
-
-    def Start(self):
+    def Gather(self):
         print(11)
 
     def AddAuthor(self):
@@ -52,10 +51,12 @@ class MainWindowViewModel(QMainWindow, Ui_MainWindow):
         self.ui_setting.setWindowModality(QtCore.Qt.ApplicationModal)
         self.ui_setting.show()
 
-    def Data(self):
+    def DataManagement(self):
         self.ui_data = DataManagementViewModel()
         self.ui_data.setWindowModality(QtCore.Qt.ApplicationModal)
+        self.ui_data.signal1.connect(self.FullAuthor)
         self.ui_data.show()
+
     def Download(self):
         print(11)
 

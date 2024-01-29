@@ -6,6 +6,7 @@ import re
 import string
 import sys
 
+import psutil
 import unicodedata
 from AnyQt.QtGui import QFontDatabase
 from fake_useragent import FakeUserAgent
@@ -64,6 +65,10 @@ def GetInfo():
     return link, pcursor, ck, ua
 
 
+def GetUserAgent():
+    return FakeUserAgent().random
+
+
 def timestamp_to_datetime(timestamp):
     """
     将时间戳转换为日期时间格式
@@ -80,13 +85,25 @@ def timestamp_to_datetime(timestamp):
     return date_string
 
 
-def GetCustomFonts(self):
-    font_family = "Ryanの阿里媽媽方圓體100"  # 替换为你的字体家族名称
-    if QFontDatabase.addApplicationFont(":/font/阿里妈妈方圆体100.ttf"):  # 替换为你的字体文件路径
-        font_family = font_family + " " + QFontDatabase.applicationFontFamilies(0)[0]  # 获取字体名称，可能需要手动添加字体家族名称
-    return font_family
-
-
 def contains_chinese(input_str):
     return bool(re.search(r'[\u4e00-\u9fa5]', input_str))
 
+
+def get_disk_usage(path):
+    """
+    获取指定路径所在磁盘的使用情况
+    """
+    # 获取当前磁盘的分区信息
+    disk_partitions = psutil.disk_partitions()
+    disk_info = None
+    for partition in disk_partitions:
+        if partition.mountpoint == path:
+            disk_info = partition
+            break
+    if disk_info is None:
+        raise ValueError("Invalid path")
+    # 获取磁盘使用情况
+    disk_usage = psutil.disk_usage(path)
+    print(
+        "磁盘总大小：{}，已使用：{}，剩余：{}，磁盘路径：{}".format(disk_usage.total, disk_usage.used, disk_usage.free, path))
+    return disk_usage.total, disk_usage.used, disk_usage.free, disk_info.device

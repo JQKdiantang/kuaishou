@@ -18,7 +18,6 @@ class AddAuthorVIewModel(QMainWindow, Ui_AddAuthor):
     def __init__(self):
         super(AddAuthorVIewModel, self).__init__()
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowMaximizeButtonHint)
-        self.setFont(QFont(Util.GetCustomFonts(self)))  # 设置自定义字体
         self.setupUi(self)
         self.btnCancel.clicked.connect(self.close)
         self.btnAdd.clicked.connect(self.Add)
