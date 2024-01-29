@@ -53,7 +53,10 @@ border: 1px solid #1D5573;
 }</string>
     </property>
     <property name="text">
-     <string>D:/</string>
+     <string>D:\</string>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
     </property>
    </widget>
    <widget class="QPushButton" name="btnSelect">
@@ -422,7 +425,7 @@ border: 1px solid #1D5573;
       <x>20</x>
       <y>90</y>
       <width>711</width>
-      <height>23</height>
+      <height>25</height>
      </rect>
     </property>
     <property name="styleSheet">

@@ -5,12 +5,9 @@ import os
 import re
 import string
 import sys
-
 import psutil
-import unicodedata
-from AnyQt.QtGui import QFontDatabase
-from fake_useragent import FakeUserAgent
 
+from fake_useragent import FakeUserAgent
 
 def rep_char(chars):
     """
@@ -93,17 +90,11 @@ def get_disk_usage(path):
     """
     获取指定路径所在磁盘的使用情况
     """
-    # 获取当前磁盘的分区信息
-    disk_partitions = psutil.disk_partitions()
-    disk_info = None
-    for partition in disk_partitions:
-        if partition.mountpoint == path:
-            disk_info = partition
-            break
-    if disk_info is None:
-        raise ValueError("Invalid path")
-    # 获取磁盘使用情况
     disk_usage = psutil.disk_usage(path)
-    print(
-        "磁盘总大小：{}，已使用：{}，剩余：{}，磁盘路径：{}".format(disk_usage.total, disk_usage.used, disk_usage.free, path))
-    return disk_usage.total, disk_usage.used, disk_usage.free, disk_info.device
+    total_gb = round(disk_usage.total / (1024. ** 3), 2)
+    used_gb = round(disk_usage.used / (1024. ** 3), 2)
+    free_gb = round(disk_usage.free / (1024. ** 3), 2)
+    usage_percentage = int(disk_usage.percent)
+    # print(f"磁盘总大小：{total_gb} GB，已使用：{used_gb} GB，剩余：{free_gb} GB，磁盘使用率：{usage_percentage}%，磁盘路径：{path}")
+    return total_gb, used_gb, free_gb, usage_percentage
+

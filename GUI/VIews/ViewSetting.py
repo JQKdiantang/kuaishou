@@ -32,6 +32,7 @@ class Ui_Setting(object):
         self.lineEdit.setStyleSheet("QLineEdit{\n"
 "border: 1px solid #1D5573;\n"
 "}")
+        self.lineEdit.setReadOnly(True)
         self.lineEdit.setObjectName("lineEdit")
         self.btnSelect = QtWidgets.QPushButton(self.centralwidget)
         self.btnSelect.setGeometry(QtCore.QRect(740, 49, 85, 27))
@@ -145,7 +146,7 @@ class Ui_Setting(object):
         self.label_7.setFont(font)
         self.label_7.setObjectName("label_7")
         self.progressBar = QtWidgets.QProgressBar(self.centralwidget)
-        self.progressBar.setGeometry(QtCore.QRect(20, 90, 711, 23))
+        self.progressBar.setGeometry(QtCore.QRect(20, 90, 711, 25))
         self.progressBar.setStyleSheet("QProgressBar::chunk\n"
 "{\n"
 "    border-radius:15px;\n"
@@ -174,7 +175,7 @@ class Ui_Setting(object):
         _translate = QtCore.QCoreApplication.translate
         Setting.setWindowTitle(_translate("Setting", "选项设置"))
         self.label.setText(_translate("Setting", "快手作品保存总目录："))
-        self.lineEdit.setText(_translate("Setting", "D:/"))
+        self.lineEdit.setText(_translate("Setting", "D:\\"))
         self.btnSelect.setText(_translate("Setting", "选择目录"))
         self.label_2.setText(_translate("Setting", "同时采集线程数："))
         self.checkBox.setText(_translate("Setting", "采集时同步下载"))
