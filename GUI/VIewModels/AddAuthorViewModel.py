@@ -3,7 +3,7 @@ import sys
 
 
 from PyQt5 import QtCore
-from PyQt5.QtCore import Qt, QUrl
+from PyQt5.QtCore import Qt, QUrl, pyqtSignal
 from PyQt5.QtGui import QColor, QBitmap, QPainter, QPixmap, QPainterPath, QFont
 from PyQt5.QtNetwork import QNetworkRequest, QNetworkReply, QNetworkAccessManager
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QTableWidgetItem
@@ -14,7 +14,7 @@ from GUI.VIews.ViewAddAuthor import Ui_AddAuthor
 
 
 class AddAuthorVIewModel(QMainWindow, Ui_AddAuthor):
-
+    signal1 = pyqtSignal()
     def __init__(self):
         super(AddAuthorVIewModel, self).__init__()
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowMaximizeButtonHint)
@@ -27,13 +27,11 @@ class AddAuthorVIewModel(QMainWindow, Ui_AddAuthor):
         # self.initUI()
 
     def Add(self):
-        print(self.userInfo)
         datas = [self.userInfo[0][0]]
-
         if SQLiteHelper.selectUserIdDate(datas) != 1:
-            print(self.userInfo[0][0], self.userInfo[0][1], self.userInfo[0][2])
             SQLiteHelper.insertAuthorDate(self.userInfo)
             QMessageBox.information(self, '信息', "作者添加成功", QMessageBox.Yes)
+            self.signal1.emit()
         else:
             QMessageBox.information(self, '信息', "作者已存在", QMessageBox.Yes)
 
@@ -70,7 +68,7 @@ class AddAuthorVIewModel(QMainWindow, Ui_AddAuthor):
             return
         fan, follow, photo_public, user_name, gender, headurl = kuaishou.getAuthorPublicNum(result)
 
-        print(fan, follow, photo_public, user_name, gender, headurl)
+        # print(fan, follow, photo_public, user_name, gender, headurl)
 
         self.userInfo = [(result, user_name, "0")]
 

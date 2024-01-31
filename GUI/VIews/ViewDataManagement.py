@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_DataManagement(object):
     def setupUi(self, DataManagement):
         DataManagement.setObjectName("DataManagement")
-        DataManagement.resize(940, 540)
+        DataManagement.resize(942, 540)
         DataManagement.setStyleSheet("font: 15px \"Ryanの阿里媽媽方圓體100\";")
         self.centralwidget = QtWidgets.QWidget(DataManagement)
         self.centralwidget.setObjectName("centralwidget")

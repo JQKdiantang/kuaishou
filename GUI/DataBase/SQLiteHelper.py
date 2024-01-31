@@ -6,7 +6,7 @@ import threadpool
 
 from GUI.Utils import Util
 
-DatabaseName = 'Download.db'
+DatabaseName = '../Download.db'
 
 
 def create_database():
@@ -16,9 +16,7 @@ def create_database():
             conn.execute('''
             CREATE TABLE Download (
             user_id TEXT,
-            url TEXT,
-            time TEXT,
-            isDownload blob,
+            video_id TEXT,
             id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT);
             ''')
             conn.execute('''
@@ -41,7 +39,7 @@ def insertAuthorDate(datas):
 
 def insertDownloadDate(datas):
     conn = sqlite3.connect(DatabaseName)
-    sql = 'insert into Download (user_id, url, time,video_name,isDownload) values( ?, ?, ?,?,?)'
+    sql = 'insert into Download (user_id, video_id) values( ?, ?)'
     with conn:
         conn.executemany(sql, datas)
     conn.close()
@@ -202,7 +200,7 @@ def UpdateAuthorACl(user_id, acl):
 
 def selectIsDownloadDate(url):
     conn = sqlite3.connect(DatabaseName)
-    sql = 'select isDownload from Download  where user_id = ? and time =? '
+    sql = 'select isDownload from Download  where user_id = ? and video_id =? '
     with conn:
         datas = conn.execute(sql, url)
         for data in datas:

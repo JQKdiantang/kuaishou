@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>快手采集工具</string>
   </property>
   <property name="styleSheet">
    <string notr="true">font: 15px &quot;Ryanの阿里媽媽方圓體100&quot;;</string>
@@ -38,7 +38,7 @@
      <rect>
       <x>20</x>
       <y>60</y>
-      <width>380</width>
+      <width>530</width>
       <height>721</height>
      </rect>
     </property>
@@ -169,9 +169,9 @@
    <widget class="QTableWidget" name="tw_works">
     <property name="geometry">
      <rect>
-      <x>420</x>
+      <x>560</x>
       <y>60</y>
-      <width>961</width>
+      <width>821</width>
       <height>721</height>
      </rect>
     </property>
@@ -179,7 +179,7 @@
      <set>QAbstractItemView::NoEditTriggers</set>
     </property>
     <property name="selectionMode">
-     <enum>QAbstractItemView::SingleSelection</enum>
+     <enum>QAbstractItemView::NoSelection</enum>
     </property>
     <attribute name="verticalHeaderVisible">
      <bool>false</bool>
@@ -191,22 +191,12 @@
     </column>
     <column>
      <property name="text">
-      <string>作品ID</string>
-     </property>
-    </column>
-    <column>
-     <property name="text">
       <string>作品文案</string>
      </property>
     </column>
     <column>
      <property name="text">
       <string>时长</string>
-     </property>
-    </column>
-    <column>
-     <property name="text">
-      <string>视频宽高</string>
      </property>
     </column>
     <column>

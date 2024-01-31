@@ -90,7 +90,9 @@ def get_disk_usage(path):
     """
     获取指定路径所在磁盘的使用情况
     """
-    disk_usage = psutil.disk_usage(path)
+    drive = os.path.splitdrive(path)
+    # print(drive[0])
+    disk_usage = psutil.disk_usage(drive[0])
     total_gb = round(disk_usage.total / (1024. ** 3), 2)
     used_gb = round(disk_usage.used / (1024. ** 3), 2)
     free_gb = round(disk_usage.free / (1024. ** 3), 2)

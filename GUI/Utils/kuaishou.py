@@ -71,6 +71,14 @@ def req_data_h265(url, id, pcursor, ck, ua):
     return data_json
 
 
+def getWorksInfo(id, pcursor):
+    url, pc, ck, ua = Util.GetInfo()
+    data = req_data_h265(url, id, pcursor, ck, ua)
+    next_page_Pcursor = data['data']['visionProfilePhotoList']['pcursor']
+    data_list = data['data']['visionProfilePhotoList']['feeds']
+    return next_page_Pcursor, data_list
+
+
 # 搜索用户
 def req_data_Searchr(url, name, ck, ua):
     # 请求头
@@ -162,22 +170,4 @@ def SearchUser(ksKey):
 
 
 if __name__ == '__main__':
-    SearchUser("大表姐")
-    # # 发送GET请求
-    # response = requests.post('https://www.kuaishou.com')
-    #
-    # # 获取响应中的Cookie字典
-    # cookies = response.cookies
-    #
-    # # 遍历Cookie字典，查找'did'键的值
-    # did_value = None
-    # for cookie_name, cookie_value in cookies.items():
-    #     if cookie_name == 'did':
-    #         did_value = cookie_value
-    #         break
-    #
-    #         # 打印'did'的值
-    # if did_value:
-    #     print('did:', did_value)
-    # else:
-    #     print('Did not find the "did" cookie')
+    getWorksInfo("3x28ugd9bmiuumy","")
