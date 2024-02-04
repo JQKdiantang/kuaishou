@@ -3,6 +3,7 @@
 
 import glob
 import os
+import shutil
 import subprocess
 from datetime import datetime
 
@@ -34,7 +35,8 @@ def merge_videos(input_dir, output_dir=None):
         filename = os.path.basename(video_file)
         try:
             date_str, _ = filename.split(' ', 1)  # 假设日期位于空格前的部分
-            date = datetime.strptime(date_str[3:], '%Y-%m-%d')  # 跳过'已转码'字样
+            index= filename.index('-')
+            date = datetime.strptime(date_str[index+1:], '%Y-%m-%d')  # 跳过'已转码'字样
             if date not in date_video_map:
                 date_video_map[date] = []
             date_video_map[date].append(video_file)
@@ -96,7 +98,25 @@ def rename_files(directory):
             # os.rename(filepath, new_filepath)
             print(f"Renamed: {file} -> {new_filename}")
 
-
+def organize_files(src_dir):
+    """
+    将源文件夹中的每个文件按照"-"前的名字创建相应文件夹并移动进去
+    :param src_dir: 源文件夹路径
+    """
+    # 遍历源文件夹中的所有文件
+    for filename in os.listdir(src_dir):
+        # 如果是文件（而不是目录）
+        if os.path.isfile(os.path.join(src_dir, filename)):
+            # 提取"-"之前的部分作为新的文件夹名称
+            folder_name = filename.split('-')[0]
+            subdir = os.path.join(src_dir, folder_name)
+            os.makedirs(subdir, exist_ok=True)
+            # 构建原文件完整路径
+            old_file_path = os.path.join(src_dir, filename)
+            # 构建新文件完整路径（即移动到新创建的子目录下）
+            new_file_path = os.path.join(subdir, filename)
+            # 移动文件
+            shutil.move(old_file_path, new_file_path)
 def merge_videos_in_directory(directory):
     delete_log_files(main_directory)
     total_subdirs = sum(1 for root, dirs, files in os.walk(directory) if files)
@@ -111,6 +131,10 @@ def merge_videos_in_directory(directory):
             sub_dir = os.path.join(root, dir)
             if not os.listdir(sub_dir):  # 确保子目录为空
                 os.rmdir(sub_dir)
+
 if __name__ == "__main__":
-    main_directory = r"D:\直播复盘录制工具_N"  # 主文件夹路径
+    main_directory = r"F:\直播复盘录制工具\抖音"  # 主文件夹路径
     merge_videos_in_directory(main_directory)
+    main_directory = r"G:\抖音"  # 主文件夹路径
+    merge_videos_in_directory(main_directory)
+    # organize_files(main_directory)
