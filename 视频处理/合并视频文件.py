@@ -1,22 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import codecs
 import glob
 import os
-import subprocess
-
-import os
-import glob
-import shlex
-
-import os
-import glob
-import shlex
-import subprocess
-
-import os
-import glob
 import subprocess
 from datetime import datetime
 
