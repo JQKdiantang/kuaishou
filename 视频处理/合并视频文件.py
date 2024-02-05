@@ -33,16 +33,25 @@ def merge_videos(input_dir, output_dir=None):
     for video_file in files:
         # 解析视频文件名中的日期和时间
         filename = os.path.basename(video_file)
-        try:
-            date_str, _ = filename.split(' ', 1)  # 假设日期位于空格前的部分
-            index= filename.index('-')
-            date = datetime.strptime(date_str[index+1:], '%Y-%m-%d')  # 跳过'已转码'字样
-            if date not in date_video_map:
-                date_video_map[date] = []
-            date_video_map[date].append(video_file)
-        except ValueError:
-            # 如果无法解析日期，则忽略该文件
-            pass
+
+        date = extract_date_time(filename)
+        if date not in date_video_map:
+            date_video_map[date] = []
+        date_video_map[date].append(video_file)
+        # try:
+        #     if '已转码' in filename:
+        #         date_str, _ = filename.split('_', 1)  # 假设日期位于空格前的部分
+        #         date = datetime.strptime(date_str[3:], '%Y-%m-%d %H-%M-%S')  # 跳过'已转码'字样
+        #     else:
+        #         index = filename.index('-')
+        #         date_str, _ = filename.split('.', 1)  # 假设日期位于空格前的部分
+        #         date = datetime.strptime(date_str[index+1:], '%Y-%m-%d %H-%M-%S')
+        #     if date not in date_video_map:
+        #         date_video_map[date] = []
+        #     date_video_map[date].append(video_file)
+        # except ValueError:
+        #     # 如果无法解析日期，则忽略该文件
+        #     pass
 
     for date, video_list in date_video_map.items():
         output_file = f"{os.path.join(os.path.dirname(input_dir), output_prefix)}-{date.strftime('%Y-%m-%d')}.mp4"
@@ -69,7 +78,24 @@ def merge_videos(input_dir, output_dir=None):
         for original_video in video_list:
             os.remove(original_video)
 
+def extract_date_time(filename):
+    # 分别处理两种不同的文件命名格式
+    if '已转码' in filename:
+        # 对于"已转码2024-02-05 20-35-32_xxxxx.mp4"这样的格式
+        date_str = filename.split('已转码')[1].split(' ')[0]
+    else:
+        # 对于"xxxxx-2024-01-31 08-11-37.mp4"这样的格式
+        date_str, _ = filename.rsplit('.', 1)
+        date_str = date_str.partition('-')[2]
+        date_str = date_str.split(' ')[0]
 
+    try:
+        # 解析日期和时间
+        date = datetime.strptime(date_str, '%Y-%m-%d')
+        return date
+    except ValueError:
+        # 如果无法解析日期，则返回None或抛出异常
+        return None
 def delete_log_files(directory):
     # 在给定目录下查找.log文件
     for root, dirs, files in os.walk(directory):
@@ -133,8 +159,8 @@ def merge_videos_in_directory(directory):
                 os.rmdir(sub_dir)
 
 if __name__ == "__main__":
-    main_directory = r"F:\直播复盘录制工具\抖音"  # 主文件夹路径
+    main_directory = r"G:\直播复盘录制工具\抖音"  # 主文件夹路径
     merge_videos_in_directory(main_directory)
-    main_directory = r"G:\抖音"  # 主文件夹路径
-    merge_videos_in_directory(main_directory)
+    # main_directory = r"D:\新建文件夹"  # 主文件夹路径
+    # merge_videos_in_directory(main_directory)
     # organize_files(main_directory)
