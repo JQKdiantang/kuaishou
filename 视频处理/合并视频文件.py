@@ -75,11 +75,14 @@ def merge_videos2(input_dir, output_dir=None):
         input_dir (str): 包含视频文件的目录路径。
         output_dir (str, optional): 输出目录，默认使用与input_dir相同的目录。
     """
-    # 获取输入目录名作为输出前缀
+    # 获取输出目录的实际路径
     if output_dir is None:
-        output_prefix = os.path.basename(os.path.normpath(input_dir))
+        output_base_dir = os.path.dirname(input_dir)
     else:
-        output_prefix = os.path.basename(output_dir)
+        output_base_dir = os.path.abspath(output_dir)
+        # 如果输出目录不存在，则创建
+        if not os.path.exists(output_base_dir):
+            os.makedirs(output_base_dir)
 
     # 获取目录下的所有mp4文件
     files = glob.glob(os.path.join(input_dir, '*.mp4'))
@@ -90,7 +93,8 @@ def merge_videos2(input_dir, output_dir=None):
         # 解析视频文件名中的日期和时间以及基础文件名（不含日期）
         filename = os.path.basename(video_file)
         if '已转码' in filename:
-            base_name = output_prefix
+            # 获取输入目录名作为输出前缀
+            base_name = os.path.basename(os.path.normpath(input_dir))
         else:
             base_name = extract_base_name(filename)  # 假设extract_base_name为提取无日期部分的函数
         date = extract_date_time(filename)
@@ -106,10 +110,10 @@ def merge_videos2(input_dir, output_dir=None):
             if len(video_list) == 1:
                 # 当相同名称的文件只有一个时，直接重命名并移动文件
                 single_video = video_list[0]
-                new_output_file = f"{os.path.join(os.path.dirname(input_dir), base_name)}-{date}.mp4"
+                new_output_file = f"{os.path.join(output_base_dir, base_name)}-{date}.mp4"
                 os.rename(single_video, new_output_file)
             else:
-                output_file = f"{os.path.join(os.path.dirname(input_dir), base_name)}-{date}.mp4"
+                output_file = f"{os.path.join(output_base_dir, base_name)}-{date}.mp4"
                 input_list_file = 'list.txt'
                 # 写入inputs.txt文件
                 with open(input_list_file, 'w', encoding="utf-8") as f:
@@ -229,12 +233,12 @@ def organize_files(src_dir):
             shutil.move(old_file_path, new_file_path)
 
 
-def merge_videos_in_directory(directory):
+def merge_videos_in_directory(directory, output_dir=None):
     delete_log_files(main_directory)
     total_subdir = sum(1 for root, dirs, files in os.walk(directory) if files)
     pbar = tqdm(total=total_subdir)
     for root, dirs, files in os.walk(directory):
-        merge_videos2(root, None)
+        merge_videos2(root, output_dir)
         pbar.update(1)
     pbar.close()
     # 删除所有子文件夹
@@ -246,9 +250,10 @@ def merge_videos_in_directory(directory):
 
 
 if __name__ == "__main__":
-    main_directory = r"D:\直播复盘录制工具_N\抖音"  # 主文件夹路径
+    main_directory = r"F:\直播复盘录制工具\抖音"  # 主文件夹路径
+    output_dir = r"F:\新建文件夹 (3)"  # 主文件夹路径
 
-    merge_videos_in_directory(main_directory)
+    merge_videos_in_directory(main_directory,output_dir)
     # main_directory = r"D:\新建文件夹"  # 主文件夹路径
     # merge_videos_in_directory(main_directory)
     # organize_files(main_directory)
