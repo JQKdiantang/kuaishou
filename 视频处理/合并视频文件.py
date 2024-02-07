@@ -111,7 +111,8 @@ def merge_videos2(input_dir, output_dir=None):
                 # 当相同名称的文件只有一个时，直接重命名并移动文件
                 single_video = video_list[0]
                 new_output_file = f"{os.path.join(output_base_dir, base_name)}-{date}.mp4"
-                os.rename(single_video, new_output_file)
+                # os.rename(single_video, new_output_file)
+                shutil.move(single_video, new_output_file)
             else:
                 output_file = f"{os.path.join(output_base_dir, base_name)}-{date}.mp4"
                 input_list_file = 'list.txt'
@@ -250,7 +251,7 @@ def merge_videos_in_directory(directory, output_dir=None):
 
 
 if __name__ == "__main__":
-    main_directory = r"F:\直播复盘录制工具\抖音"  # 主文件夹路径
+    main_directory = r"G:\直播复盘录制工具\抖音"  # 主文件夹路径
     output_dir = r"F:\新建文件夹 (3)"  # 主文件夹路径
 
     merge_videos_in_directory(main_directory,output_dir)
