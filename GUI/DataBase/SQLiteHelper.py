@@ -95,7 +95,7 @@ def UpdateDates(datas):
 # 高效率
 def UpdateDates2(datas):
     conn = sqlite3.connect(DatabaseName)
-    sql = 'REPLACE INTO Download (user_id,url,time,isDownload,video_name,id) values(?,?,?,?,?,?) '
+    sql = 'REPLACE INTO Download (user_id,video_id) values(?,?) '
     cursor = conn.cursor()
     # with conn:
     cursor.executemany(sql, datas)
@@ -200,11 +200,10 @@ def UpdateAuthorACl(user_id, acl):
 
 def selectIsDownloadDate(url):
     conn = sqlite3.connect(DatabaseName)
-    sql = 'select isDownload from Download  where user_id = ? and video_id =? '
+    sql = 'select * from Download  where user_id = ? and video_id =? '
     with conn:
         datas = conn.execute(sql, url)
-        for data in datas:
-            return data[0]
+        return len(list(datas))
 
 
 def selectUserIdDate(url):

@@ -1,8 +1,10 @@
+import os
 import sys
 import time
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 
+import requests
 import threadpool
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QThreadPool
@@ -47,7 +49,7 @@ class Worker(QThread):
                 video_url = item['photo']['photoH265Url']
                 if video_url is None or video_url == "":  # 如果没有H265 获取H264
                     video_url = item['photo']['photoUrl']
-                list_info.append((author, video_name, duration, video_id, video_url))
+                list_info.append((user_id, author, video_name, duration, video_id, video_url))
 
             self.finished.emit(list_info)
 
@@ -71,12 +73,16 @@ class MainWindowViewModel(QMainWindow, Ui_MainWindow):
         self.ui_setting = None
         self.ui_data = None
         self.listInfo = []
+        self.listInfoData = []
+        self.DownloadData = []
+        self.path = 'D:/video'
 
         self.btnStart.clicked.connect(self.Gather)
         self.btnAdd.clicked.connect(self.AddAuthor)
         self.btnSet.clicked.connect(self.Setting)
         self.btnData.clicked.connect(self.DataManagement)
         self.btnClose.clicked.connect(self.closeEvent)
+        self.btnDownload.clicked.connect(self.Download)
         self.signal1.connect(self.on_result_changed)
         self.Init()
 
@@ -102,7 +108,8 @@ class MainWindowViewModel(QMainWindow, Ui_MainWindow):
     #     event.accept()  # 接受关闭事件
 
     def on_result_changed(self, list_info):
-        for author, video_name, duration, video_id, video_url in list_info:
+        for user_id, author, video_name, duration, video_id, video_url in list_info:
+            self.listInfoData.append(([user_id,author, video_name, video_id, video_url],None))
             self.tw_works.insertRow(self.tw_works.rowCount())
             rowIdx = self.tw_works.rowCount() - 1
             list = [QTableWidgetItem(author), QTableWidgetItem(video_name), QTableWidgetItem(str(duration)),
@@ -182,8 +189,26 @@ class MainWindowViewModel(QMainWindow, Ui_MainWindow):
         self.ui_data.show()
 
     def Download(self):
-        print(11)
-
+        pool = threadpool.ThreadPool(50)  # 线程池设置,最多同时跑30个线程
+        tasks = threadpool.makeRequests(self.func, self.listInfoData)
+        [pool.putRequest(task) for task in tasks]
+        pool.wait()
+        SQLiteHelper.UpdateDates2(self.DownloadData)
+    def func(self,user_id, author,video_name,video_id,video_url):
+        # time.sleep(0.5)
+        if not os.path.exists(self.path + '/' + author + '/'):
+            os.makedirs(self.path + '/' + author + '/')
+        datas = [user_id, video_id]
+        filepath = self.path + '/' + author + '/' + str(video_id) + '-' + video_name + '.mp4'
+        if SQLiteHelper.selectIsDownloadDate(datas) == 0 and not os.path.exists(filepath):
+            video_content = requests.get(video_url, timeout=6.8).content
+            with open(filepath, mode='wb') as f:
+                f.write(video_content)
+            print(f'{str(video_id) + "# " + filepath}>>> 下载完成')
+        else:
+            print(f'{str(video_id) + "# " + filepath}>>> 已存在')
+        datas = (user_id, video_id)  # 下载完成后保存视频ID
+        self.DownloadData.append(datas)
     def SaveDownloadList(self):
         print(11)
 
