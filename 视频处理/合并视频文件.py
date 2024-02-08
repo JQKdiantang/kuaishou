@@ -66,7 +66,8 @@ def merge_videos(input_dir, output_dir=None):
         for original_video in video_list:
             os.remove(original_video)
 
-def merge_videos2(input_dir, output_dir=None):
+
+def merge_videos2(input_dir, output_dir=None, timestamp=None):
     """
     合并指定目录下相同文件名（或全部文件名相同）且同一天的所有视频，并在合并完毕后删除原始文件。
     输出文件将保存在与输入目录相同的目录中，文件名以前缀（即输入目录名）开头。
@@ -98,12 +99,13 @@ def merge_videos2(input_dir, output_dir=None):
         else:
             base_name = extract_base_name(filename)  # 假设extract_base_name为提取无日期部分的函数
         date = extract_date_time(filename)
-
-        if date not in date_filename_video_map:
-            date_filename_video_map[date] = {}
-        if base_name not in date_filename_video_map[date]:
-            date_filename_video_map[date][base_name] = []
-        date_filename_video_map[date][base_name].append(video_file)
+        # 当timestamp未提供或者拍摄日期早于给定时间时处理视频文件
+        if timestamp is None or date < timestamp:
+            if date not in date_filename_video_map:
+                date_filename_video_map[date] = {}
+            if base_name not in date_filename_video_map[date]:
+                date_filename_video_map[date][base_name] = []
+            date_filename_video_map[date][base_name].append(video_file)
 
     for date, filename_video_map in date_filename_video_map.items():
         for base_name, video_list in filename_video_map.items():
@@ -234,12 +236,12 @@ def organize_files(src_dir):
             shutil.move(old_file_path, new_file_path)
 
 
-def merge_videos_in_directory(directory, output_dir=None):
+def merge_videos_in_directory(directory, output_dir=None, timestamp=None):
     delete_log_files(main_directory)
     total_subdir = sum(1 for root, dirs, files in os.walk(directory) if files)
     pbar = tqdm(total=total_subdir)
     for root, dirs, files in os.walk(directory):
-        merge_videos2(root, output_dir)
+        merge_videos2(root, output_dir, timestamp)
         pbar.update(1)
     pbar.close()
     # 删除所有子文件夹
@@ -251,10 +253,10 @@ def merge_videos_in_directory(directory, output_dir=None):
 
 
 if __name__ == "__main__":
-    main_directory = r"G:\直播复盘录制工具\抖音"  # 主文件夹路径
-    output_dir = r"F:\新建文件夹 (3)"  # 主文件夹路径
+    main_directory = r"D:\直播复盘录制工具_N\抖音"  # 主文件夹路径
+    output_dir = r"D:\新建文件夹 (3)"  # 主文件夹路径
 
-    merge_videos_in_directory(main_directory,output_dir)
+    merge_videos_in_directory(main_directory, output_dir,'20240207')
     # main_directory = r"D:\新建文件夹"  # 主文件夹路径
     # merge_videos_in_directory(main_directory)
     # organize_files(main_directory)
