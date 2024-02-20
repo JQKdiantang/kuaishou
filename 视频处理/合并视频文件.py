@@ -141,35 +141,28 @@ def merge_videos2(input_dir, output_dir=None, timestamp=None):
 
 
 def extract_base_name(filename):
-    # 假设日期和时间格式为 "基础名称-XXXX-XX-XX XX-XX-XX"
-    pattern = r'^(.*)-\d{4}-\d{2}-\d{2} \d{2}-\d{2}-\d{2}'
+    # 匹配并提取时间戳及其两侧的部分
+    pattern = r'(.*)[-_]?\d{4}-\d{2}-\d{2} \d{2}-\d{2}-\d{2}([-_].*)'
 
     match = re.match(pattern, filename)
+
     if match:
-        return match.group(1)  # 返回基础文件名部分
-    else:
-        raise ValueError(f"无法从文件名 {filename} 中提取基础名称")
+        left_part = match.group(1).strip().replace('_', '').replace('-', '')
+        right_part = match.group(2).strip().replace('_', '').replace('-', '') if match.group(2) else ''
+
+        # 根据“_”的存在判断基础名称所在的位置
+        if '_' in match.group():
+            return right_part
+        elif '-' in match.group(1):  # 新增：判断左侧是否包含破折号（-）
+            return left_part
+
+        # 如果左侧既没有下划线也没有破折号，则返回右侧部分
+        return left_part if not right_part else right_part
+
+    raise ValueError(f"无法从文件名 {filename} 中提取基础名称")
 
 
 def extract_date_time(filename):
-    # # 分别处理两种不同的文件命名格式
-    # if '已转码' in filename:
-    #     # 对于"已转码2024-02-05 20-35-32_xxxxx.mp4"这样的格式
-    #     date_str = filename.split('已转码')[1].split(' ')[0]
-    # else:
-    #     # 对于"xxxxx-2024-01-31 08-11-37.mp4"这样的格式
-    #     date_str, _ = filename.rsplit('.', 1)
-    #     date_str = date_str.partition('-')[2]
-    #     date_str = date_str.split(' ')[0]
-    #
-    # try:
-    #     # 解析日期和时间
-    #     date = datetime.strptime(date_str, '%Y-%m-%d')
-    #     return date
-    # except ValueError:
-    #     # 如果无法解析日期，则返回None或抛出异常
-    #     return None
-
     # 使用正则表达式匹配日期和时间
     date_match = re.search(r'(\d{4}-\d{2}-\d{2} \d{2}-\d{2}-\d{2})', filename)
 
@@ -198,6 +191,23 @@ def delete_log_files(directory):
                 print(f"文件 {file} 已被删除")
             except OSError as e:
                 print(f"Error: {file} : {e.strerror}")
+def delete_zero_size_files(directory):
+    # 遍历指定目录及其子目录
+    for root, dirs, files in os.walk(directory):
+        # 查找.ts文件并检查其大小
+        for file in files:
+            if file.endswith('.ts'):
+                file_path = os.path.join(root, file)
+                # 获取文件大小
+                size_in_bytes = os.path.getsize(file_path)
+
+                # 如果文件大小为0字节，则尝试删除该文件
+                if size_in_bytes == 0:
+                    try:
+                        os.remove(file_path)
+                        print(f"文件 {file_path} 已被删除（大小为0KB）")
+                    except OSError as e:
+                        print(f"Error: {file_path} : {e.strerror}")
 
 
 def rename_files(directory):
@@ -238,11 +248,16 @@ def organize_files(src_dir):
 
 def merge_videos_in_directory(directory, output_dir=None, timestamp=None):
     delete_log_files(main_directory)
+    delete_zero_size_files(main_directory)
     total_subdir = sum(1 for root, dirs, files in os.walk(directory) if files)
-    pbar = tqdm(total=total_subdir)
+    pbar = tqdm(total=total_subdir, desc='Processing: ')
+
     for root, dirs, files in os.walk(directory):
+        current_progress = pbar.n / total_subdir * 100
+        pbar.set_description(f"当前处理的文件夹：{root} | 进度: {current_progress:.2f}%")
         merge_videos2(root, output_dir, timestamp)
         pbar.update(1)
+
     pbar.close()
     # 删除所有子文件夹
     for root, dirs, files in os.walk(directory, topdown=False):
@@ -253,10 +268,10 @@ def merge_videos_in_directory(directory, output_dir=None, timestamp=None):
 
 
 if __name__ == "__main__":
-    main_directory = r"D:\直播复盘录制工具_N\抖音"  # 主文件夹路径
-    output_dir = r"D:\新建文件夹 (3)"  # 主文件夹路径
+    main_directory = r"G:\直播复盘录制工具\抖音"  # 主文件夹路径
+    output_dir = r"F:\直播复盘录制工具"  # 主文件夹路径
 
-    merge_videos_in_directory(main_directory, output_dir,'20240207')
+    merge_videos_in_directory(main_directory, output_dir,'2024-02-20')
     # main_directory = r"D:\新建文件夹"  # 主文件夹路径
     # merge_videos_in_directory(main_directory)
     # organize_files(main_directory)
