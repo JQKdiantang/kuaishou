@@ -521,18 +521,18 @@ if __name__ == '__main__':
     # folder_path = r'D:\Download\软件\download'1
     # output_folder = r'D:\Download\软件\download1'
 
-    folder_path = r'D:\直播复盘录制工具_N\抖音'
-    # folder_path = r'E:\新建文件夹'
-    # folder_path = r'E:\video'
+    # folder_path = r'D:\直播复盘录制工具_N\抖音'
+    folder_path = r'D:\新建文件夹'
+    # folder_path = r'D:\video'
 
     # 批量处理录制文件信息
-    Process_files(folder_path)
+    # Process_files(folder_path)
 
     # 重命名添加主目录名称
     # rename_files(folder_path)
 
     # 移动文件到主目录
-    # move_files(folder_path)
+    move_files(folder_path)
 
     # 删除文件名中指定文字
     # replace_string_in_filename(folder_path, "已转码", "")

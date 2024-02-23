@@ -120,7 +120,7 @@ def req_data_Searchr2(url, name, ck, ua):
     # 请求头
     headers = {
         'content-type': 'application/json',
-        'Cookie': "kpf=PC_WEB; clientid=3; did=web_950d56d7d66a6cc32bec3910ec6edea4; kuaishou.live.bfb1s=477cb0011daca84b36b3a4676857e5a1; clientid=3; did=web_950d56d7d66a6cc32bec3910ec6edea4; client_key=65890b29; kpn=GAME_ZONE",
+        'Cookie': "kpf=PC_WEB; clientid=3; did=web_a64cc131fd7d3b902042049d029243bd; kpn=KUAISHOU_VISION",
         'Host': 'www.kuaishou.com',
         'Origin': 'https://www.kuaishou.com',
         'Referer': 'https://www.kuaishou.com/search/video?searchKey=' + name,

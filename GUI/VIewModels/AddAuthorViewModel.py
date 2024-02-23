@@ -61,8 +61,8 @@ class AddAuthorVIewModel(QMainWindow, Ui_AddAuthor):
         elif len(self.lineEdit.text()) == 15:
             result = self.lineEdit.text()
         else:
-            # name, result = kuaishou.SearchUser(self.lineEdit.text())
-            result=''
+            name, result = kuaishou.SearchUser(self.lineEdit.text())
+            # result=''
         if result == '':
             QMessageBox.information(self, '信息', "输入格式不正确", QMessageBox.Yes)
             return

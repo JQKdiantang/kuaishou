@@ -1,5 +1,6 @@
 import os
 import cv2
+from PIL import Image
 
 """
 功能：将视频转成图片(提取视频的每一帧图片)
@@ -139,7 +140,18 @@ def get_first_frame(video_path):
         print('无法读取视频帧')
         return None
     image_path = os.path.splitext(video_path)[0] + '.jpg'
-    cv2.imwrite(image_path, frame)
+    # 假设 frame 是 OpenCV 的 BGR 格式图像
+    pil_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # 转换为 RGB 格式以便 PIL 处理
+    pil_image = Image.fromarray(pil_image)
+
+    # 保存图像
+    pil_image.save(image_path)
+    # 检查图片是否保存成功
+    # success = cv2.imwrite(image_path, frame)
+    # if not success:
+    #     print(f"无法保存第一帧到 {image_path}")
+    #     return None
+    # cv2.imwrite(image_path, frame)
     cap.release()
     return image_path
 
@@ -162,4 +174,4 @@ if __name__ == "__main__":
     # ExtractVideoBySpecialFrame(video_input, output_path, 100, 200)
 
     # 调用函数处理目录下的视频文件
-    process_videos(r"D:\Download\抖音")
+    process_videos(r"D:\新建文件夹 (2)")

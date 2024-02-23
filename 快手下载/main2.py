@@ -217,7 +217,7 @@ def save(id, url, page, ck, ua):
             # 视频宽度
             voide_width = item['photo']['videoResource']['h264']['adaptationSet'][0]['representation'][0]['width']
 
-            print(voide_id, voide_hieght, voide_width)
+            # print(voide_id, voide_hieght, voide_width)
 
             # 视频地址 H265
             video_url = item['photo']['photoH265Url']

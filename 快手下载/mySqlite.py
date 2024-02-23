@@ -357,7 +357,7 @@ def CreateFileDirectory(authors):
             index += 1
 
 
-path = 'E:/video'
+path = 'D:/video'
 if __name__ == '__main__':
     # UpdateAllAuthorAndRecordIndo(GetAllAuthorAndRecordIndo())
     pool = threadpool.ThreadPool(50)  # 线程池设置,最多同时跑30个线程

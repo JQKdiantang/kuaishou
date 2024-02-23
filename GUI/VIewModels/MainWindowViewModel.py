@@ -238,6 +238,7 @@ class MainWindowViewModel(QMainWindow, Ui_MainWindow):
         self.tw_works.setColumnWidth(3, 100)
 
     def FullAuthor(self):
+        self.listInfo.clear()
         for row in range(self.tw_author.rowCount()):
             self.tw_author.removeRow(0)
         AuthorDatas = SQLiteHelper.GetAllAuthorInfoNo()
