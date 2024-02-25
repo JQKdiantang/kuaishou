@@ -174,4 +174,4 @@ if __name__ == "__main__":
     # ExtractVideoBySpecialFrame(video_input, output_path, 100, 200)
 
     # 调用函数处理目录下的视频文件
-    process_videos(r"D:\新建文件夹 (2)")
+    process_videos(r"F:\新建文件夹")

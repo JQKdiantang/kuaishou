@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+from time import sleep
 
 from tqdm import tqdm
 
@@ -35,7 +36,7 @@ def upload_video_to_bilibili(video_file, tag, tid, cover_file):
 
 
 if __name__ == "__main__":
-    directory =r"D:\新建文件夹 (2)"
+    directory =r"F:\直播复盘录制工具"
     success_count = 0
     failure_count = 0
     with open('upload_log.txt', 'w') as log_file:
@@ -55,11 +56,14 @@ if __name__ == "__main__":
                 if return_code == 0:
                     success_count += 1
                     log_file.write(f"成功上传：{filename}\n")
-                    os.remove(video_file)
+                    log_file.flush()
+                    sleep(1)
                     os.remove(cover_file)
+                    os.remove(video_file)
                 else:
                     failure_count += 1
                     log_file.write(f"上传失败：{filename}\n")
+                    log_file.flush()
                     os.remove(cover_file)
 
     log_file.close()

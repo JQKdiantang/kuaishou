@@ -209,7 +209,43 @@ def delete_zero_size_files(directory):
                     except OSError as e:
                         print(f"Error: {file_path} : {e.strerror}")
 
+def ffmpeg_progress(line):
+    # 解析FFmpeg输出以获取进度信息
+    if "time=" in line:
+        time_info = line.split("time=")[-1].split(" ")[0]
+        time_secs = sum(float(x) * 60**i for i, x in enumerate(time_info.split(":")[::-1]))
+        out_time = float(line[line.find("out_time=")+9:line.find(",")])
+        progress = time_secs / out_time
+        return progress
+def convert_ts_to_mp4(input_dir):
+    for root, dirs, files in tqdm(os.walk(input_dir), desc='总体进度'):
+        for filename in files:
+            if filename.endswith(".ts"):
+                input_file = os.path.join(root, filename)
+                base_name, ext = os.path.splitext(filename)
+                output_file = os.path.join(root, f"已转码{base_name}{'.mp4'}")
 
+                cmd = [
+                    'ffmpeg',
+                    '-i', input_file,  # 输入文件
+                    '-c', 'copy','-y',  # 使用copy命令，不重新编码
+                    '-progress', '-',  # 将进度信息输出到标准错误流
+                    output_file  # 输出文件
+                ]
+
+                with tqdm(desc=f'转换: {filename}', total=100, unit='%') as pbar:
+                    proc = subprocess.Popen(cmd, stderr=subprocess.PIPE)
+
+                    while proc.poll() is None:
+                        line = proc.stderr.readline().decode('utf-8').strip()
+                        progress = ffmpeg_progress(line)
+                        if progress is not None:
+                            pbar.update(int(progress * 100))
+
+                    if proc.returncode == 0:
+                        print(f"{input_file} 已成功转换为 {output_file}")
+                    else:
+                        print(f"{input_file} 转换出错: {proc.stderr.read().decode('utf-8')}")
 def rename_files(directory):
     for root, dirs, files in os.walk(directory):
         print(dirs)
@@ -223,7 +259,6 @@ def rename_files(directory):
             new_filepath = os.path.join(root, new_filename)
             os.rename(filepath, new_filepath)
             print(f"Renamed: {file} -> {new_filename}")
-
 
 def organize_files(src_dir):
     """
@@ -271,7 +306,9 @@ if __name__ == "__main__":
     main_directory = r"G:\直播复盘录制工具\抖音"  # 主文件夹路径
     output_dir = r"F:\直播复盘录制工具"  # 主文件夹路径
 
-    merge_videos_in_directory(main_directory, output_dir,'2024-02-20')
+    # convert_ts_to_mp4(main_directory)
+
+    merge_videos_in_directory(main_directory, output_dir,'2024-02-25')
     # main_directory = r"D:\新建文件夹"  # 主文件夹路径
     # merge_videos_in_directory(main_directory)
     # organize_files(main_directory)
