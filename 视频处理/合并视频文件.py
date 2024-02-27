@@ -257,8 +257,6 @@ def convert_ts_to_mp42(input_dir, timestamp=None):
                     files_to_process.append((input_file, root))
 
     total_files = len(files_to_process)
-    processed_files = 0
-
     pbar = tqdm(total=total_files, desc='转换进度: ')
 
     for input_file, root in files_to_process:
@@ -275,15 +273,13 @@ def convert_ts_to_mp42(input_dir, timestamp=None):
 
         try:
             pbar.set_description(f"当前处理的文件：{os.path.basename(input_file)} | 进度")
-
             subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
         except subprocess.CalledProcessError as e:
             print(f"{os.path.basename(input_file)} 转换出错: {e.stderr.decode('utf-8')}")
-        processed_files += 1
         pbar.update(1)  # 更新进度条
         os.remove(input_file)
         continue
-
+    pbar.close()
 
 def rename_files(directory):
     for root, dirs, files in os.walk(directory):
@@ -325,7 +321,7 @@ def merge_videos_in_directory(directory, output_dir=None, timestamp=None):
     delete_log_files(main_directory)
     delete_zero_size_files(main_directory)
     total_subdir = sum(1 for root, dirs, files in os.walk(directory) if files)
-    pbar = tqdm(total=total_subdir, desc='Processing: ')
+    pbar = tqdm(total=total_subdir, desc='处理进度: ')
 
     for root, dirs, files in os.walk(directory):
         # current_progress = pbar.n / total_subdir * 100

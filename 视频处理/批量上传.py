@@ -47,32 +47,24 @@ if __name__ == "__main__":
                 image_path = get_first_frame(video_file)
                 cover_file = image_path
 
-                # 调用封装函数
-                # video_file = '张软软-2024-02-24.mp4'
-                #tag = '娱乐剪刀手安利大赛 '
-                #tag = '新片新剧一起看 '
-                #tag = '影视整活大赏 '
-
                 tags = ['娱乐剪刀手安利大赛', '新片新剧一起看', '影视整活大赏']
                 # 随机选取一个tag
                 tag = random.choice(tags)
                 tid = '183'
-                # cover_file = '张软软-2024-02-24.jpg'
+                # 调用封装函数
                 return_code = upload_video_to_bilibili(video_file, tag, tid, cover_file)
 
                 if return_code == 0:
                     success_count += 1
                     log_file.write(f"成功上传：{filename}\n")
-                    log_file.flush()
-                    sleep(1)
+                    sleep(5)
                     os.remove(cover_file)
                     os.remove(video_file)
                 else:
                     failure_count += 1
                     log_file.write(f"上传失败：{filename}\n")
-                    log_file.flush()
                     os.remove(cover_file)
-
+            log_file.flush()
     log_file.close()
 
     print(f"上传成功数量：{success_count}")
