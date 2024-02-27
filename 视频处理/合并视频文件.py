@@ -8,6 +8,7 @@ import shutil
 import subprocess
 from datetime import datetime
 
+import cv2
 from tqdm import tqdm
 
 
@@ -281,6 +282,142 @@ def convert_ts_to_mp42(input_dir, timestamp=None):
         continue
     pbar.close()
 
+
+def check_timestamp_jumps(video_path):
+    cap = cv2.VideoCapture(video_path)
+
+    if not cap.isOpened():
+        print("无法打开视频文件")
+        return
+
+    last_frame_ts = 0
+    frame_count = 0
+    max_jump_detected = 0
+    fps = cap.get(cv2.CAP_PROP_FPS)
+
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        current_frame_ts = cap.get(cv2.CAP_PROP_POS_MSEC)
+        frame_count += 1
+
+        # 计算时间戳差值（以毫秒为单位）
+        timestamp_diff = current_frame_ts - last_frame_ts
+        # 转换为帧数的预期差值
+        expected_diff_frames = timestamp_diff / (1000 / fps)
+
+        # 检查是否出现大于一帧以上的时间跳跃
+        jump_frames = abs(expected_diff_frames - 1)
+        if jump_frames > 1:
+            max_jump_detected = max(max_jump_detected, jump_frames)
+            print(f"在第 {frame_count} 帧发现时间戳跳变：{jump_frames:.2f} 帧")
+
+        last_frame_ts = current_frame_ts
+
+    cap.release()
+
+    if max_jump_detected > 0:
+        print(f"视频中检测到最大时间戳跳变为：{max_jump_detected:.2f} 帧")
+    else:
+        print("视频时间戳连续，未检测到明显跳变")
+
+
+def check_audio_video_sync(input_video, verbose=False):
+    """
+    检查输入视频文件中的音频和视频是否同步。
+
+    :param input_video: 输入视频文件路径。
+    :param verbose: 是否详细打印时间戳信息，默认为False。
+    """
+
+    ffmpeg_command = f'ffprobe -i "{input_video}" -show_packets'
+    result = subprocess.run(ffmpeg_command, shell=True, capture_output=True)
+
+    # 解析ffprobe的输出结果，寻找音频和视频的时间戳
+    audio_pts_list = []
+    video_pts_list = []
+
+    for line in result.stdout.decode('utf-8').splitlines():
+        if "codec_type=audio" in line:
+            packet_info = line.split(',')
+            try:
+                audio_pts = float(packet_info[packet_info.index("pts_time=") + 1])
+                audio_pts_list.append(audio_pts)
+            except ValueError:
+                pass
+
+        elif "codec_type=video" in line:
+            packet_info = line.split(',')
+            try:
+                video_pts = float(packet_info[packet_info.index("pts_time=") + 1])
+                video_pts_list.append(video_pts)
+            except ValueError:
+                pass
+
+    # 简单的比较音频和视频的PTS差异
+    if len(audio_pts_list) > 0 and len(video_pts_list) > 0:
+        avg_audio_diff = sum([abs(a - b) for a, b in zip(audio_pts_list[:-1], audio_pts_list[1:])]) / (
+                    len(audio_pts_list) - 1)
+        avg_video_diff = sum([abs(v - w) for v, w in zip(video_pts_list[:-1], video_pts_list[1:])]) / (
+                    len(video_pts_list) - 1)
+
+        if verbose:
+            print(f"音频平均时间戳差值: {avg_audio_diff:.2f} 秒")
+            print(f"视频平均时间戳差值: {avg_video_diff:.2f} 秒")
+
+        # 这里只是一个非常基础的判断，实际同步问题可能需要更复杂的逻辑分析
+        if abs(avg_audio_diff - avg_video_diff) > 0.5:
+            print("警告：可能存在音视频同步问题，请进一步分析.")
+        else:
+            print("初步检查未发现明显的音视频同步问题.")
+
+    else:
+        print("无法从视频中提取到有效的音频或视频时间戳信息.")
+
+
+def fix_timestamp_jumps(input_video, output_video):
+    """
+    使用FFmpeg修复视频文件中的时间戳跳变问题。
+
+    :param input_video: 输入视频文件路径。
+    :param output_video: 修复后输出的视频文件路径。
+    """
+
+    # 构造FFmpeg命令
+    ffmpeg_command = f'ffmpeg -i "{input_video}" -c copy -avoid_negative_ts make_zero -fflags +genpts "{output_video}"'
+
+    try:
+        # 执行FFmpeg命令
+        subprocess.run(ffmpeg_command, shell=True, check=True)
+        print(f"成功修复视频，输出至 {output_video}")
+    except subprocess.CalledProcessError as e:
+        print(f"修复过程中发生错误: {e.stderr.decode('utf-8')}")
+
+
+def fix_timestamp_jumps_and_sync(input_video, output_video):
+    """
+    使用FFmpeg修复视频文件中的时间戳跳变问题，并尝试同步音视频。
+
+    :param input_video: 输入视频文件路径。
+    :param output_video: 修复并同步后输出的视频文件路径。
+    """
+
+    # 构造FFmpeg命令，同时进行时间戳修正和音视频同步
+    ffmpeg_command = f'ffmpeg -i "{input_video}" -c:v copy -c:a copy -map 0:v:0 -map 0:a:0 -async 1 -vsync 2 -avoid_negative_ts make_zero -fflags +genpts "{output_video}"'
+
+    try:
+        # 执行FFmpeg命令
+        subprocess.run(ffmpeg_command, shell=True, check=True)
+        print(f"成功修复并同步视频，输出至 {output_video}")
+    except subprocess.CalledProcessError as e:
+        print(f"修复或同步过程中发生错误: {e.stderr.decode('utf-8')}")
+
+    # `-async 1` 参数尝试对音频进行微调以实现与视频同步
+    # `-vsync 2` 参数处理帧间的时间戳，通过重复或丢弃帧来适应视频流的时间基准
+
+
 def rename_files(directory):
     for root, dirs, files in os.walk(directory):
         print(dirs)
@@ -341,6 +478,9 @@ def merge_videos_in_directory(directory, output_dir=None, timestamp=None):
 if __name__ == "__main__":
     main_directory = r"G:\直播复盘录制工具/抖音"  # 主文件夹路径
     output_dir = r"F:\直播复盘录制工具"  # 主文件夹路径
+
+    # 使用示例
+    # check_audio_video_sync(r"D:\BDF2018.mp4", verbose=True)
 
     convert_ts_to_mp42("F:\抖音", '2024-02-28')
 
