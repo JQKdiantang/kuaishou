@@ -37,7 +37,7 @@ def upload_video_to_bilibili(video_file, tag, tid, cover_file):
 
 
 if __name__ == "__main__":
-    directory = r"F:\直播复盘录制工具1"
+    directory = r"F:\直播复盘录制工具"
     success_count = 0
     failure_count = 0
     with open('upload_log.txt', 'w') as log_file:

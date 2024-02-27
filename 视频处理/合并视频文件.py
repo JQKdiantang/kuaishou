@@ -266,31 +266,24 @@ def convert_ts_to_mp42(input_dir, timestamp=None):
         # output_file = os.path.join(output_dir, f"已转码{base_name}.mp4")
         output_file = os.path.join(root, f"已转码{base_name}{'.mp4'}")
 
-
         cmd = [
             'ffmpeg',
             '-i', input_file,
-            '-c', 'copy', '-y',  # 注意：在实际操作中，此参数可能不会在tqdm进度条中显示进度
+            '-c', 'copy', '-y',
             output_file
         ]
 
         try:
-            current_progress = (processed_files + 1) / total_files * 100
-            pbar.set_description(f"当前处理的文件：{os.path.basename(input_file)} | 进度: {current_progress:.2f}%")
+            pbar.set_description(f"当前处理的文件：{os.path.basename(input_file)} | 进度")
 
-            result = subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-
-            # if result.returncode == 0:
-            #     os.remove(input_file)
-            #     print(f"{os.path.basename(input_file)} 已成功转换为 {os.path.basename(output_file)}")
-            # else:
-            #     raise Exception(f"{os.path.basename(input_file)} 转换出错: {result.stderr.decode('utf-8')}")
-
+            subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
         except subprocess.CalledProcessError as e:
             print(f"{os.path.basename(input_file)} 转换出错: {e.stderr.decode('utf-8')}")
+        processed_files += 1
         pbar.update(1)  # 更新进度条
         os.remove(input_file)
         continue
+
 
 def rename_files(directory):
     for root, dirs, files in os.walk(directory):
@@ -335,8 +328,8 @@ def merge_videos_in_directory(directory, output_dir=None, timestamp=None):
     pbar = tqdm(total=total_subdir, desc='Processing: ')
 
     for root, dirs, files in os.walk(directory):
-        current_progress = pbar.n / total_subdir * 100
-        pbar.set_description(f"当前处理的文件夹：{root} | 进度: {current_progress:.2f}%")
+        # current_progress = pbar.n / total_subdir * 100
+        pbar.set_description(f"当前处理的文件夹：{root} | 进度")
         merge_videos2(root, output_dir, timestamp)
         pbar.update(1)
 
@@ -353,9 +346,9 @@ if __name__ == "__main__":
     main_directory = r"G:\直播复盘录制工具/抖音"  # 主文件夹路径
     output_dir = r"F:\直播复盘录制工具"  # 主文件夹路径
 
-    convert_ts_to_mp42(main_directory, '2024-02-27')
+    convert_ts_to_mp42("F:\抖音", '2024-02-28')
 
-    merge_videos_in_directory(main_directory, output_dir,'2024-02-27')
+    # merge_videos_in_directory(main_directory, output_dir,'2024-02-27')
     # main_directory = r"D:\新建文件夹"  # 主文件夹路径
     # merge_videos_in_directory(main_directory)
     # organize_files(main_directory)
