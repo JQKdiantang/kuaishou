@@ -1,4 +1,5 @@
 import os
+import random
 import subprocess
 import sys
 from time import sleep
@@ -23,7 +24,7 @@ def upload_video_to_bilibili(video_file, tag, tid, cover_file):
     """
 
     # 构建命令参数列表
-    command = ['biliup.exe', 'upload', video_file,  '--cover', cover_file ,'--tag', tag, '--tid', tid]
+    command = ['biliup.exe', 'upload', video_file, '--cover', cover_file, '--tag', tag, '--tid', tid]
 
     return_code = subprocess.call(command)
 
@@ -36,7 +37,7 @@ def upload_video_to_bilibili(video_file, tag, tid, cover_file):
 
 
 if __name__ == "__main__":
-    directory =r"F:\直播复盘录制工具"
+    directory = r"F:\直播复盘录制工具1"
     success_count = 0
     failure_count = 0
     with open('upload_log.txt', 'w') as log_file:
@@ -48,7 +49,13 @@ if __name__ == "__main__":
 
                 # 调用封装函数
                 # video_file = '张软软-2024-02-24.mp4'
-                tag = '影视神仙剪刀手'
+                #tag = '娱乐剪刀手安利大赛 '
+                #tag = '新片新剧一起看 '
+                #tag = '影视整活大赏 '
+
+                tags = ['娱乐剪刀手安利大赛', '新片新剧一起看', '影视整活大赏']
+                # 随机选取一个tag
+                tag = random.choice(tags)
                 tid = '183'
                 # cover_file = '张软软-2024-02-24.jpg'
                 return_code = upload_video_to_bilibili(video_file, tag, tid, cover_file)
@@ -70,4 +77,3 @@ if __name__ == "__main__":
 
     print(f"上传成功数量：{success_count}")
     print(f"上传失败数量：{failure_count}")
-

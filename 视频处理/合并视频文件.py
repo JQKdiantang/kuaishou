@@ -191,6 +191,8 @@ def delete_log_files(directory):
                 print(f"文件 {file} 已被删除")
             except OSError as e:
                 print(f"Error: {file} : {e.strerror}")
+
+
 def delete_zero_size_files(directory):
     # 遍历指定目录及其子目录
     for root, dirs, files in os.walk(directory):
@@ -209,43 +211,87 @@ def delete_zero_size_files(directory):
                     except OSError as e:
                         print(f"Error: {file_path} : {e.strerror}")
 
-def ffmpeg_progress(line):
-    # 解析FFmpeg输出以获取进度信息
-    if "time=" in line:
-        time_info = line.split("time=")[-1].split(" ")[0]
-        time_secs = sum(float(x) * 60**i for i, x in enumerate(time_info.split(":")[::-1]))
-        out_time = float(line[line.find("out_time=")+9:line.find(",")])
-        progress = time_secs / out_time
-        return progress
-def convert_ts_to_mp4(input_dir):
+
+def convert_ts_to_mp4(input_dir, timestamp=None):
+    delete_zero_size_files(input_dir)
     for root, dirs, files in tqdm(os.walk(input_dir), desc='总体进度'):
         for filename in files:
             if filename.endswith(".ts"):
-                input_file = os.path.join(root, filename)
-                base_name, ext = os.path.splitext(filename)
-                output_file = os.path.join(root, f"已转码{base_name}{'.mp4'}")
+                date = extract_date_time(filename)
+                # 当timestamp未提供或者拍摄日期早于给定时间时处理视频文件
+                if timestamp is None or date < timestamp:
+                    input_file = os.path.join(root, filename)
+                    base_name, ext = os.path.splitext(filename)
+                    output_file = os.path.join(root, f"已转码{base_name}{'.mp4'}")
 
-                cmd = [
-                    'ffmpeg',
-                    '-i', input_file,  # 输入文件
-                    '-c', 'copy','-y',  # 使用copy命令，不重新编码
-                    '-progress', '-',  # 将进度信息输出到标准错误流
-                    output_file  # 输出文件
-                ]
+                    cmd = [
+                        'ffmpeg',
+                        '-i', input_file,  # 输入文件
+                        '-c', 'copy', '-y',  # 使用copy命令，不重新编码
+                        '-progress', '-',  # 将进度信息输出到标准错误流
+                        output_file  # 输出文件
+                    ]
+                    # 执行ffmpeg命令
+                    result = subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-                with tqdm(desc=f'转换: {filename}', total=100, unit='%') as pbar:
-                    proc = subprocess.Popen(cmd, stderr=subprocess.PIPE)
-
-                    while proc.poll() is None:
-                        line = proc.stderr.readline().decode('utf-8').strip()
-                        progress = ffmpeg_progress(line)
-                        if progress is not None:
-                            pbar.update(int(progress * 100))
-
-                    if proc.returncode == 0:
+                    # 检查转换是否成功
+                    if result.returncode == 0:
+                        os.remove(input_file)
                         print(f"{input_file} 已成功转换为 {output_file}")
                     else:
-                        print(f"{input_file} 转换出错: {proc.stderr.read().decode('utf-8')}")
+                        print(f"{input_file} 转换出错: {result.stderr}")
+
+
+def convert_ts_to_mp42(input_dir, timestamp=None):
+    delete_zero_size_files(input_dir)
+
+    files_to_process = []
+
+    for root, dirs, files in os.walk(input_dir):
+        for filename in files:
+            if filename.endswith(".ts"):
+                date = extract_date_time(filename)
+                # 根据timestamp筛选需要处理的文件
+                if timestamp is None or (timestamp and date < timestamp):
+                    input_file = os.path.join(root, filename)
+                    files_to_process.append((input_file, root))
+
+    total_files = len(files_to_process)
+    processed_files = 0
+
+    pbar = tqdm(total=total_files, desc='转换进度: ')
+
+    for input_file, root in files_to_process:
+        base_name = os.path.splitext(os.path.basename(input_file))[0]
+        # output_file = os.path.join(output_dir, f"已转码{base_name}.mp4")
+        output_file = os.path.join(root, f"已转码{base_name}{'.mp4'}")
+
+
+        cmd = [
+            'ffmpeg',
+            '-i', input_file,
+            '-c', 'copy', '-y',  # 注意：在实际操作中，此参数可能不会在tqdm进度条中显示进度
+            output_file
+        ]
+
+        try:
+            current_progress = (processed_files + 1) / total_files * 100
+            pbar.set_description(f"当前处理的文件：{os.path.basename(input_file)} | 进度: {current_progress:.2f}%")
+
+            result = subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+
+            # if result.returncode == 0:
+            #     os.remove(input_file)
+            #     print(f"{os.path.basename(input_file)} 已成功转换为 {os.path.basename(output_file)}")
+            # else:
+            #     raise Exception(f"{os.path.basename(input_file)} 转换出错: {result.stderr.decode('utf-8')}")
+
+        except subprocess.CalledProcessError as e:
+            print(f"{os.path.basename(input_file)} 转换出错: {e.stderr.decode('utf-8')}")
+        pbar.update(1)  # 更新进度条
+        os.remove(input_file)
+        continue
+
 def rename_files(directory):
     for root, dirs, files in os.walk(directory):
         print(dirs)
@@ -259,6 +305,7 @@ def rename_files(directory):
             new_filepath = os.path.join(root, new_filename)
             os.rename(filepath, new_filepath)
             print(f"Renamed: {file} -> {new_filename}")
+
 
 def organize_files(src_dir):
     """
@@ -303,12 +350,12 @@ def merge_videos_in_directory(directory, output_dir=None, timestamp=None):
 
 
 if __name__ == "__main__":
-    main_directory = r"G:\直播复盘录制工具\抖音"  # 主文件夹路径
+    main_directory = r"G:\直播复盘录制工具/抖音"  # 主文件夹路径
     output_dir = r"F:\直播复盘录制工具"  # 主文件夹路径
 
-    # convert_ts_to_mp4(main_directory)
+    convert_ts_to_mp42(main_directory, '2024-02-27')
 
-    merge_videos_in_directory(main_directory, output_dir,'2024-02-25')
+    merge_videos_in_directory(main_directory, output_dir,'2024-02-27')
     # main_directory = r"D:\新建文件夹"  # 主文件夹路径
     # merge_videos_in_directory(main_directory)
     # organize_files(main_directory)
