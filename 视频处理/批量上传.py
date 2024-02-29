@@ -6,7 +6,7 @@ from time import sleep
 
 from tqdm import tqdm
 
-from 视频处理.将视频转成图片 import get_first_frame
+from 视频处理.将视频转成图片 import  get_first_frame_and_crop
 
 
 def upload_video_to_bilibili(video_file, tag, tid, cover_file):
@@ -40,11 +40,11 @@ if __name__ == "__main__":
     directory = r"F:\直播复盘录制工具"
     success_count = 0
     failure_count = 0
-    with open('upload_log.txt', 'w') as log_file:
+    with open(directory+'\\upload_log.txt', 'w') as log_file:
         for filename in os.listdir(directory):
             if filename.endswith('.mp4'):  # 检查文件是否为视频文件
                 video_file = os.path.join(directory, filename)
-                image_path = get_first_frame(video_file)
+                image_path = get_first_frame_and_crop(video_file)
                 cover_file = image_path
 
                 tags = ['娱乐剪刀手安利大赛', '新片新剧一起看', '影视整活大赏']

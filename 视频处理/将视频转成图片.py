@@ -110,8 +110,6 @@ def ExtractVideoBySpecialFrame(video_input, output_path, start_frame_index, end_
     cap.release()
 
 
-
-
 def process_videos(directory):
     """
     处理目录下的所有视频文件，获取每个视频的第一帧并保存为.jpg文件
@@ -156,6 +154,52 @@ def get_first_frame(video_path):
     return image_path
 
 
+def get_first_frame_and_crop(video_path):
+    """
+    获取视频文件的第一帧图像，将其裁剪为1486x929，并在分辨率不足时放大填充以消除黑边
+    :param video_path: 视频文件路径
+    :return: 裁剪后图像的.jpg文件路径
+    """
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        print('无法打开视频文件')
+        return None
+
+    ret, frame = cap.read()
+    if not ret:
+        print('无法读取视频帧')
+        return None
+
+    # 将BGR格式转换为RGB格式
+    # rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+    # 获取原图宽高
+    original_height, original_width, _ = frame.shape
+
+    # 计算缩放比例
+    scale_factor = max(1486 / original_width, 929 / original_height)
+
+    # 缩放图像至足够大以包含裁剪尺寸
+    resized_frame = cv2.resize(frame, (int(original_width * scale_factor), int(original_height * scale_factor)),
+                               interpolation=cv2.INTER_AREA)
+
+    # 计算裁剪区域
+    crop_height = 929
+    crop_width = 1486
+    start_x = int((resized_frame.shape[1] - crop_width) / 2)
+    start_y = int((resized_frame.shape[0] - crop_height) / 2)
+
+    # 裁剪图像
+    cropped_frame = resized_frame[start_y:start_y + crop_height, start_x:start_x + crop_width]
+
+    # 将OpenCV图像转为PIL图像并保存
+    pil_image = Image.fromarray(cv2.cvtColor(cropped_frame, cv2.COLOR_RGB2BGR))
+    image_path = os.path.splitext(video_path)[0] + '.jpg'
+    pil_image.save(image_path)
+
+    cap.release()
+
+    return image_path
 
 
 if __name__ == "__main__":

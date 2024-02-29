@@ -9,66 +9,11 @@ import subprocess
 from datetime import datetime
 
 import cv2
+import ffmpeg
 from tqdm import tqdm
 
 
-def merge_videos(input_dir, output_dir=None):
-    """
-    合并指定目录下同一天的所有视频文件，并在合并完毕后删除原始文件。
-    输出文件将保存在与输入目录相同的目录中，文件名以前缀（即输入目录名）开头。
-
-    参数：
-        input_dir (str): 包含视频文件的目录路径。
-        output_dir (str, optional): 输出目录，默认使用与input_dir相同的目录。
-    """
-    # 获取输入目录名作为输出前缀
-    if output_dir is None:
-        output_prefix = os.path.basename(os.path.normpath(input_dir))
-    else:
-        output_prefix = os.path.basename(output_dir)
-
-    # 获取目录下的所有mp4文件
-    files = glob.glob(os.path.join(input_dir, '*.mp4'))
-
-    date_video_map = {}
-
-    for video_file in files:
-        # 解析视频文件名中的日期和时间
-        filename = os.path.basename(video_file)
-
-        date = extract_date_time(filename)
-        if date not in date_video_map:
-            date_video_map[date] = []
-        date_video_map[date].append(video_file)
-
-    for date, video_list in date_video_map.items():
-        output_file = f"{os.path.join(os.path.dirname(input_dir), output_prefix)}-{date}.mp4"
-
-        input_list_file = 'list.txt'
-
-        # 写入inputs.txt文件
-        with open(input_list_file, 'w', encoding="utf-8") as f:
-            for video in video_list:
-                f.write(f"file '{video}'\n")
-            # 在最后一行添加一个空行，这是ffmpeg concat滤镜要求的
-            f.write("\n")
-
-        # 定义ffmpeg合并命令
-        concat_command = ['ffmpeg', '-f', 'concat', '-safe', '0', '-i', input_list_file, '-c', 'copy', '-y',
-                          output_file]
-
-        # 执行ffmpeg命令
-        subprocess.run(concat_command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-        # 删除临时文件（可选）
-        os.remove(input_list_file)
-
-        # 删除原始文件（请谨慎操作，确保合并成功后再删除）
-        for original_video in video_list:
-            os.remove(original_video)
-
-
-def merge_videos2(input_dir, output_dir=None, timestamp=None):
+def merge_videos(input_dir, output_dir=None, timestamp=None):
     """
     合并指定目录下相同文件名（或全部文件名相同）且同一天的所有视频，并在合并完毕后删除原始文件。
     输出文件将保存在与输入目录相同的目录中，文件名以前缀（即输入目录名）开头。
@@ -94,11 +39,7 @@ def merge_videos2(input_dir, output_dir=None, timestamp=None):
     for video_file in files:
         # 解析视频文件名中的日期和时间以及基础文件名（不含日期）
         filename = os.path.basename(video_file)
-        if '已转码' in filename:
-            # 获取输入目录名作为输出前缀
-            base_name = os.path.basename(os.path.normpath(input_dir))
-        else:
-            base_name = extract_base_name(filename)  # 假设extract_base_name为提取无日期部分的函数
+        base_name = extract_base_name(filename)
         date = extract_date_time(filename)
         # 当timestamp未提供或者拍摄日期早于给定时间时处理视频文件
         if timestamp is None or date < timestamp:
@@ -141,24 +82,96 @@ def merge_videos2(input_dir, output_dir=None, timestamp=None):
                     os.remove(original_video)
 
 
+def merge_videos_ts(input_dir, output_dir=None, timestamp=None):
+    """
+    合并指定目录下相同文件名（或全部文件名相同）且同一天的所有视频，并在合并完毕后删除原始文件。
+    输出文件将保存在与输入目录相同的目录中，文件名以前缀（即输入目录名）开头。
+
+    参数：
+        input_dir (str): 包含视频文件的目录路径。
+        output_dir (str, optional): 输出目录，默认使用与input_dir相同的目录。
+    """
+    # 获取输出目录的实际路径
+    if output_dir is None:
+        output_base_dir = os.path.dirname(input_dir)
+    else:
+        output_base_dir = os.path.abspath(output_dir)
+        # 如果输出目录不存在，则创建
+        if not os.path.exists(output_base_dir):
+            os.makedirs(output_base_dir)
+
+    # 获取目录下的所有ts文件
+    files = glob.glob(os.path.join(input_dir, '*.ts'))
+
+    date_filename_video_map = {}
+
+    for video_file in files:
+        # 解析视频文件名中的日期和时间以及基础文件名（不含日期）
+        filename = os.path.basename(video_file)
+        base_name = extract_base_name(filename)  # 假设extract_base_name为提取无日期部分的函数
+        date = extract_date_time(filename)
+        # 当timestamp未提供或者拍摄日期早于给定时间时处理视频文件
+        if timestamp is None or date < timestamp:
+            if date not in date_filename_video_map:
+                date_filename_video_map[date] = {}
+            if base_name not in date_filename_video_map[date]:
+                date_filename_video_map[date][base_name] = []
+            date_filename_video_map[date][base_name].append(video_file)
+
+    for date, filename_video_map in date_filename_video_map.items():
+        for base_name, video_list in filename_video_map.items():
+            if len(video_list) == 1:
+                # 当相同名称的文件只有一个时，直接重命名并移动文件
+                input_file = video_list[0]
+                output_file = f"{os.path.join(output_base_dir, base_name)}-{date}.mp4"
+                # os.rename(single_video, new_output_file)
+                # shutil.move(single_video, new_output_file)
+                cmd = [
+                    'ffmpeg',
+                    '-i', input_file,
+                    '-c', 'copy', '-y',
+                    output_file
+                ]
+                subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+                os.remove(input_file)
+            else:
+                output_file = f"{os.path.join(output_base_dir, base_name)}-{date}.mp4"
+                input_list_file = 'list.txt'
+                # 写入inputs.txt文件
+                with open(input_list_file, 'w', encoding="utf-8") as f:
+                    for video in video_list:
+                        f.write(f"file '{video}'\n")
+                    # 在最后一行添加一个空行，这是ffmpeg concat滤镜要求的
+                    f.write("\n")
+
+                # 定义ffmpeg合并命令
+                concat_command = [
+                    'ffmpeg',
+                    '-f', 'concat',
+                    '-safe', '0',
+                    '-i', input_list_file,
+                    '-c', 'copy', '-y',
+                    output_file
+                ]
+
+                # 执行ffmpeg命令
+                subprocess.run(concat_command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+                # 删除临时文件（可选）
+                os.remove(input_list_file)
+
+                # 删除原始文件（请谨慎操作，确保合并成功后再删除）
+                for original_video in video_list:
+                    os.remove(original_video)
+
+
 def extract_base_name(filename):
-    # 匹配并提取时间戳及其两侧的部分
-    pattern = r'(.*)[-_]?\d{4}-\d{2}-\d{2} \d{2}-\d{2}-\d{2}([-_].*)'
-
-    match = re.match(pattern, filename)
-
+    # 匹配时间戳及其后面的部分，并确保能处理开头可能存在的非时间戳文本
+    pattern = r'\d{4}-\d{2}-\d{2} \d{2}-\d{2}-\d{2}_([^.]*)'
+    match = re.search(pattern, filename)
     if match:
-        left_part = match.group(1).strip().replace('_', '').replace('-', '')
-        right_part = match.group(2).strip().replace('_', '').replace('-', '') if match.group(2) else ''
-
-        # 根据“_”的存在判断基础名称所在的位置
-        if '_' in match.group():
-            return right_part
-        elif '-' in match.group(1):  # 新增：判断左侧是否包含破折号（-）
-            return left_part
-
-        # 如果左侧既没有下划线也没有破折号，则返回右侧部分
-        return left_part if not right_part else right_part
+        base_name = match.group(1).strip()
+        return base_name
 
     raise ValueError(f"无法从文件名 {filename} 中提取基础名称")
 
@@ -213,74 +226,81 @@ def delete_zero_size_files(directory):
                         print(f"Error: {file_path} : {e.strerror}")
 
 
-def convert_ts_to_mp4(input_dir, timestamp=None):
-    delete_zero_size_files(input_dir)
-    for root, dirs, files in tqdm(os.walk(input_dir), desc='总体进度'):
+def rename_files(directory):
+    for root, dirs, files in os.walk(directory):
+        print(dirs)
+        files = os.listdir(root)
+        for file in files:
+            filepath = os.path.join(root, file)
+
+            file.replace('已转码', '')
+            parent_folder = os.path.basename(os.path.dirname(filepath))
+            new_filename = f"{parent_folder}-{file}"
+            new_filepath = os.path.join(root, new_filename)
+            os.rename(filepath, new_filepath)
+            print(f"Renamed: {file} -> {new_filename}")
+
+
+def organize_files(src_dir):
+    """
+    将源文件夹中的每个文件按照"-"前的名字创建相应文件夹并移动进去
+    :param src_dir: 源文件夹路径
+    """
+    # 遍历源文件夹中的所有文件
+    for filename in os.listdir(src_dir):
+        # 如果是文件（而不是目录）
+        if os.path.isfile(os.path.join(src_dir, filename)):
+            # 提取"-"之前的部分作为新的文件夹名称
+            folder_name = filename.split('-')[0]
+            subdir = os.path.join(src_dir, folder_name)
+            os.makedirs(subdir, exist_ok=True)
+            # 构建原文件完整路径
+            old_file_path = os.path.join(src_dir, filename)
+            # 构建新文件完整路径（即移动到新创建的子目录下）
+            new_file_path = os.path.join(subdir, filename)
+            # 移动文件
+            shutil.move(old_file_path, new_file_path)
+
+
+def check_audio_video_sync(directory_path, output_path=None):
+    # 验证输出路径是否存在，如果不存在则创建
+    if output_path is not None and not os.path.isdir(output_path):
+        os.makedirs(output_path)
+
+    # 遍历指定目录及其所有子目录下的所有文件
+    for dirpath, dirs, files in os.walk(directory_path):
         for filename in files:
-            if filename.endswith(".ts"):
-                date = extract_date_time(filename)
-                # 当timestamp未提供或者拍摄日期早于给定时间时处理视频文件
-                if timestamp is None or date < timestamp:
-                    input_file = os.path.join(root, filename)
-                    base_name, ext = os.path.splitext(filename)
-                    output_file = os.path.join(root, f"已转码{base_name}{'.mp4'}")
+            file_path = os.path.join(dirpath, filename)
 
-                    cmd = [
-                        'ffmpeg',
-                        '-i', input_file,  # 输入文件
-                        '-c', 'copy', '-y',  # 使用copy命令，不重新编码
-                        '-progress', '-',  # 将进度信息输出到标准错误流
-                        output_file  # 输出文件
-                    ]
-                    # 执行ffmpeg命令
-                    result = subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            # 检查文件是否为视频文件（支持.ts和.mp4）
+            if filename.endswith(tuple(['.mp4', '.ts'])):
+                probe_result = ffmpeg.probe(file_path)
 
-                    # 检查转换是否成功
-                    if result.returncode == 0:
-                        os.remove(input_file)
-                        print(f"{input_file} 已成功转换为 {output_file}")
-                    else:
-                        print(f"{input_file} 转换出错: {result.stderr}")
+                video_stream = next((stream for stream in probe_result['streams'] if stream['codec_type'] == 'video'),
+                                    None)
+                audio_stream = next((stream for stream in probe_result['streams'] if stream['codec_type'] == 'audio'),
+                                    None)
 
+                # 如果存在视频流和音频流，则获取它们各自的时长（以秒为单位）
+                if video_stream and audio_stream:
+                    video_duration = float(video_stream['duration'])
+                    audio_duration = float(audio_stream['duration'])
 
-def convert_ts_to_mp42(input_dir, timestamp=None):
-    delete_zero_size_files(input_dir)
-
-    files_to_process = []
-
-    for root, dirs, files in os.walk(input_dir):
-        for filename in files:
-            if filename.endswith(".ts"):
-                date = extract_date_time(filename)
-                # 根据timestamp筛选需要处理的文件
-                if timestamp is None or (timestamp and date < timestamp):
-                    input_file = os.path.join(root, filename)
-                    files_to_process.append((input_file, root))
-
-    total_files = len(files_to_process)
-    pbar = tqdm(total=total_files, desc='转换进度: ')
-
-    for input_file, root in files_to_process:
-        base_name = os.path.splitext(os.path.basename(input_file))[0]
-        # output_file = os.path.join(output_dir, f"已转码{base_name}.mp4")
-        output_file = os.path.join(root, f"已转码{base_name}{'.mp4'}")
-
-        cmd = [
-            'ffmpeg',
-            '-i', input_file,
-            '-c', 'copy', '-y',
-            output_file
-        ]
-
-        try:
-            pbar.set_description(f"当前处理的文件：{os.path.basename(input_file)} | 进度")
-            subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-        except subprocess.CalledProcessError as e:
-            print(f"{os.path.basename(input_file)} 转换出错: {e.stderr.decode('utf-8')}")
-        pbar.update(1)  # 更新进度条
-        os.remove(input_file)
-        continue
-    pbar.close()
+                    sync_threshold = 100.0
+                    if abs(video_duration - audio_duration) > sync_threshold:
+                        if output_path is not None:
+                            # 移动音视频不同步的文件到output_path
+                            new_file_path = os.path.join(output_path, filename)
+                            os.rename(file_path, new_file_path)
+                            # shutil.copy(file_path, new_file_path)
+                            print(
+                                f"{filename} 视频和音频总时长不一致，相差{video_duration - audio_duration}秒，已移动至：{new_file_path}")
+                        else:
+                            print(
+                                f"{filename} 视频和音频总时长不一致，相差{video_duration - audio_duration}秒 时长分别为：{video_duration} 秒 (视频) 和 {audio_duration} 秒 (音频)")
+                    # else:
+                    #     print(
+                    #         f"{filename} 视频和音频总时长相符，时长分别为：{video_duration} 秒 (视频) 和 {audio_duration} 秒 (音频)")
 
 
 def check_timestamp_jumps(video_path):
@@ -324,134 +344,44 @@ def check_timestamp_jumps(video_path):
         print("视频时间戳连续，未检测到明显跳变")
 
 
-def check_audio_video_sync(input_video, verbose=False):
-    """
-    检查输入视频文件中的音频和视频是否同步。
+def convert_ts_to_mp4(input_dir, timestamp=None):
+    delete_zero_size_files(input_dir)
 
-    :param input_video: 输入视频文件路径。
-    :param verbose: 是否详细打印时间戳信息，默认为False。
-    """
+    files_to_process = []
 
-    ffmpeg_command = f'ffprobe -i "{input_video}" -show_packets'
-    result = subprocess.run(ffmpeg_command, shell=True, capture_output=True)
+    for root, dirs, files in os.walk(input_dir):
+        for filename in files:
+            if filename.endswith(".ts"):
+                date = extract_date_time(filename)
+                # 根据timestamp筛选需要处理的文件
+                if timestamp is None or (timestamp and date < timestamp):
+                    input_file = os.path.join(root, filename)
+                    files_to_process.append((input_file, root))
 
-    # 解析ffprobe的输出结果，寻找音频和视频的时间戳
-    audio_pts_list = []
-    video_pts_list = []
+    total_files = len(files_to_process)
+    pbar = tqdm(total=total_files, desc='转换进度: ')
 
-    for line in result.stdout.decode('utf-8').splitlines():
-        if "codec_type=audio" in line:
-            packet_info = line.split(',')
-            try:
-                audio_pts = float(packet_info[packet_info.index("pts_time=") + 1])
-                audio_pts_list.append(audio_pts)
-            except ValueError:
-                pass
+    for input_file, root in files_to_process:
+        base_name = os.path.splitext(os.path.basename(input_file))[0]
+        # output_file = os.path.join(output_dir, f"已转码{base_name}.mp4")
+        output_file = os.path.join(root, f"已转码{base_name}{'.mp4'}")
 
-        elif "codec_type=video" in line:
-            packet_info = line.split(',')
-            try:
-                video_pts = float(packet_info[packet_info.index("pts_time=") + 1])
-                video_pts_list.append(video_pts)
-            except ValueError:
-                pass
+        cmd = [
+            'ffmpeg',
+            '-i', input_file,
+            '-c', 'copy', '-y',
+            output_file
+        ]
 
-    # 简单的比较音频和视频的PTS差异
-    if len(audio_pts_list) > 0 and len(video_pts_list) > 0:
-        avg_audio_diff = sum([abs(a - b) for a, b in zip(audio_pts_list[:-1], audio_pts_list[1:])]) / (
-                    len(audio_pts_list) - 1)
-        avg_video_diff = sum([abs(v - w) for v, w in zip(video_pts_list[:-1], video_pts_list[1:])]) / (
-                    len(video_pts_list) - 1)
-
-        if verbose:
-            print(f"音频平均时间戳差值: {avg_audio_diff:.2f} 秒")
-            print(f"视频平均时间戳差值: {avg_video_diff:.2f} 秒")
-
-        # 这里只是一个非常基础的判断，实际同步问题可能需要更复杂的逻辑分析
-        if abs(avg_audio_diff - avg_video_diff) > 0.5:
-            print("警告：可能存在音视频同步问题，请进一步分析.")
-        else:
-            print("初步检查未发现明显的音视频同步问题.")
-
-    else:
-        print("无法从视频中提取到有效的音频或视频时间戳信息.")
-
-
-def fix_timestamp_jumps(input_video, output_video):
-    """
-    使用FFmpeg修复视频文件中的时间戳跳变问题。
-
-    :param input_video: 输入视频文件路径。
-    :param output_video: 修复后输出的视频文件路径。
-    """
-
-    # 构造FFmpeg命令
-    ffmpeg_command = f'ffmpeg -i "{input_video}" -c copy -avoid_negative_ts make_zero -fflags +genpts "{output_video}"'
-
-    try:
-        # 执行FFmpeg命令
-        subprocess.run(ffmpeg_command, shell=True, check=True)
-        print(f"成功修复视频，输出至 {output_video}")
-    except subprocess.CalledProcessError as e:
-        print(f"修复过程中发生错误: {e.stderr.decode('utf-8')}")
-
-
-def fix_timestamp_jumps_and_sync(input_video, output_video):
-    """
-    使用FFmpeg修复视频文件中的时间戳跳变问题，并尝试同步音视频。
-
-    :param input_video: 输入视频文件路径。
-    :param output_video: 修复并同步后输出的视频文件路径。
-    """
-
-    # 构造FFmpeg命令，同时进行时间戳修正和音视频同步
-    ffmpeg_command = f'ffmpeg -i "{input_video}" -c:v copy -c:a copy -map 0:v:0 -map 0:a:0 -async 1 -vsync 2 -avoid_negative_ts make_zero -fflags +genpts "{output_video}"'
-
-    try:
-        # 执行FFmpeg命令
-        subprocess.run(ffmpeg_command, shell=True, check=True)
-        print(f"成功修复并同步视频，输出至 {output_video}")
-    except subprocess.CalledProcessError as e:
-        print(f"修复或同步过程中发生错误: {e.stderr.decode('utf-8')}")
-
-    # `-async 1` 参数尝试对音频进行微调以实现与视频同步
-    # `-vsync 2` 参数处理帧间的时间戳，通过重复或丢弃帧来适应视频流的时间基准
-
-
-def rename_files(directory):
-    for root, dirs, files in os.walk(directory):
-        print(dirs)
-        files = os.listdir(root)
-        for file in files:
-            filepath = os.path.join(root, file)
-
-            file.replace('已转码', '')
-            parent_folder = os.path.basename(os.path.dirname(filepath))
-            new_filename = f"{parent_folder}-{file}"
-            new_filepath = os.path.join(root, new_filename)
-            os.rename(filepath, new_filepath)
-            print(f"Renamed: {file} -> {new_filename}")
-
-
-def organize_files(src_dir):
-    """
-    将源文件夹中的每个文件按照"-"前的名字创建相应文件夹并移动进去
-    :param src_dir: 源文件夹路径
-    """
-    # 遍历源文件夹中的所有文件
-    for filename in os.listdir(src_dir):
-        # 如果是文件（而不是目录）
-        if os.path.isfile(os.path.join(src_dir, filename)):
-            # 提取"-"之前的部分作为新的文件夹名称
-            folder_name = filename.split('-')[0]
-            subdir = os.path.join(src_dir, folder_name)
-            os.makedirs(subdir, exist_ok=True)
-            # 构建原文件完整路径
-            old_file_path = os.path.join(src_dir, filename)
-            # 构建新文件完整路径（即移动到新创建的子目录下）
-            new_file_path = os.path.join(subdir, filename)
-            # 移动文件
-            shutil.move(old_file_path, new_file_path)
+        try:
+            pbar.set_description(f"当前处理的文件：{os.path.basename(input_file)} | 进度")
+            subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        except subprocess.CalledProcessError as e:
+            print(f"{os.path.basename(input_file)} 转换出错: {e.stderr.decode('utf-8')}")
+        pbar.update(1)  # 更新进度条
+        os.remove(input_file)
+        continue
+    pbar.close()
 
 
 def merge_videos_in_directory(directory, output_dir=None, timestamp=None):
@@ -463,7 +393,7 @@ def merge_videos_in_directory(directory, output_dir=None, timestamp=None):
     for root, dirs, files in os.walk(directory):
         # current_progress = pbar.n / total_subdir * 100
         pbar.set_description(f"当前处理的文件夹：{root} | 进度")
-        merge_videos2(root, output_dir, timestamp)
+        merge_videos_ts(root, output_dir, timestamp)
         pbar.update(1)
 
     pbar.close()
@@ -476,15 +406,24 @@ def merge_videos_in_directory(directory, output_dir=None, timestamp=None):
 
 
 if __name__ == "__main__":
-    main_directory = r"G:\直播复盘录制工具/抖音"  # 主文件夹路径
+    main_directory = r"F:\直播复盘录制工具1\抖音"  # 主文件夹路径
     output_dir = r"F:\直播复盘录制工具"  # 主文件夹路径
+    error_dir = r"F:\音视频长度不一致"  # 主文件夹路径
 
-    # 使用示例
-    # check_audio_video_sync(r"D:\BDF2018.mp4", verbose=True)
+    timestamp = '2024-02-30'
+    # check_audio_video_sync(error_dir)
 
-    convert_ts_to_mp42("F:\抖音", '2024-02-28')
+    # convert_ts_to_mp4(main_directory, timestamp)
 
-    # merge_videos_in_directory(main_directory, output_dir,'2024-02-27')
-    # main_directory = r"D:\新建文件夹"  # 主文件夹路径
-    # merge_videos_in_directory(main_directory)
-    # organize_files(main_directory)
+    merge_videos_in_directory(main_directory, output_dir, timestamp)
+
+    # main_directory = r"F:\直播复盘录制工具1/抖音"  # 主文件夹路径
+    # output_dir = r"F:\直播复盘录制工具"  # 主文件夹路径
+    # error_dir = r"F:\音视频长度不一致"  # 主文件夹路径
+    # convert_ts_to_mp4(main_directory, timestamp)
+    # check_audio_video_sync(main_directory, error_dir)
+    # merge_videos_in_directory(main_directory, output_dir, timestamp)
+
+    # check_audio_video_sync(main_directory)
+
+    # check_timestamp_jumps("F:\音视频长度不一致\比亚迪海洋柳州迪润4S店-2024-02-27.mp4")
